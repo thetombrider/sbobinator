@@ -42,9 +42,10 @@ def is_valid_youtube_url(url):
 # Function to validate and extract Google Drive file ID
 def extract_google_drive_file_id(url):
     patterns = [
-        r'https://drive\.google\.com/file/d/([\w-]+)',
+        r'https://drive\.google\.com/file/d/([\w-]+)(?:/.*)?',
         r'https://drive\.google\.com/open\?id=([\w-]+)',
-        r'https://drive\.google\.com/uc\?id=([\w-]+)'
+        r'https://drive\.google\.com/uc\?id=([\w-]+)',
+        r'https://drive\.google\.com/file/d/([\w-]+)/view\?usp=sharing'
     ]
     for pattern in patterns:
         match = re.search(pattern, url)
@@ -104,7 +105,7 @@ def download_audio_from_url(url):
             return audio_data, file_name
         except Exception as e:
             raise Exception(f"Errore nel download dell'audio da YouTube: {str(e)}")
-    else:
+    elif "drive.google.com" in url:
         # Google Drive URL handling
         file_id = extract_google_drive_file_id(url)
         if file_id:
@@ -115,7 +116,9 @@ def download_audio_from_url(url):
             except Exception as e:
                 raise Exception(f"Errore nel download dell'audio da Google Drive: {str(e)}")
         else:
-            raise ValueError("URL non valido. Inserisci un URL valido di YouTube o Google Drive.")
+            raise ValueError("URL di Google Drive non valido. Assicurati che il link sia condiviso pubblicamente.")
+    else:
+        raise ValueError("URL non supportato. Inserisci un URL valido di YouTube o Google Drive.")
 
 # Sidebar for API key inputs and dashboard links
 st.sidebar.title("Inserisci le tue API Keys")
