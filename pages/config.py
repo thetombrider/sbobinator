@@ -3,6 +3,7 @@ import json
 import os
 from openai import OpenAI
 import requests
+from functions import add_sidebar_content
 
 # Function to validate OpenAI API key
 @st.cache_data(show_spinner=False)
@@ -51,9 +52,8 @@ def save_api_keys(api_keys):
 def app():
     st.title("Configurazione")
 
-    # Add sidebar with links to API dashboards
-    st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
-    st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
+    # Add sidebar content
+    add_sidebar_content()
 
     api_keys = load_api_keys()
 

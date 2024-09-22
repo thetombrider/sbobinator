@@ -118,3 +118,8 @@ def summarize_transcript(api_key, transcript, language):
     )
     
     return response.choices[0].message.content.strip()
+
+def add_sidebar_content():
+    st.sidebar.title("API Dashboards")
+    st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
+    st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")

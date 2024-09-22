@@ -12,7 +12,8 @@ from functions import (
     download_file_from_google_drive,
     download_youtube_audio,
     download_audio_from_url,
-    summarize_transcript
+    summarize_transcript,
+    add_sidebar_content
 )
 
 # Add this at the very beginning of your file
@@ -40,11 +41,10 @@ st.set_page_config(
     }
 )
 
-st.title("Sbobinator")
+# Add sidebar content
+add_sidebar_content()
 
-# Add sidebar with links to API dashboards
-st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
-st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
+st.title("Sbobinator")
 
 # Move the info message to the top
 st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
