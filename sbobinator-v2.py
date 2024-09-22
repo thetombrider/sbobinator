@@ -9,6 +9,8 @@ import re
 import gdown
 import requests
 import io
+import mimetypes
+
 st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
 
 # Function to validate OpenAI API key
@@ -58,7 +60,7 @@ def extract_google_drive_file_id(url):
 # Function to download file from Google Drive
 @st.cache_data(show_spinner=False)
 def download_file_from_google_drive(url):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         try:
             output = gdown.download(url, temp_file.name, quiet=False)
             if output is None:
@@ -168,7 +170,13 @@ elif input_option == "URL (YouTube o Google Drive)":
                     audio_data, file_name = download_audio_from_url(url)
                 
                 audio_source = {"type": "local", "data": audio_data}
-                st.audio(io.BytesIO(audio_data), format='audio/mp3')
+                
+                # Determine the MIME type based on the file extension
+                mime_type, _ = mimetypes.guess_type(file_name)
+                if mime_type is None:
+                    mime_type = 'audio/wav' if file_name.lower().endswith('.wav') else 'audio/mp3'
+                
+                st.audio(io.BytesIO(audio_data), format=mime_type)
                 st.success(f"File scaricato con successo: {file_name}")
         except Exception as e:
             st.error(str(e))
