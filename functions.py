@@ -6,6 +6,7 @@ import yt_dlp
 import gdown
 import requests
 import mimetypes
+from openai import OpenAI
 
 # Function to validate YouTube URL
 def is_valid_youtube_url(url):
@@ -92,3 +93,19 @@ def download_audio_from_url(url):
     response = requests.get(url)
     file_name = url.split("/")[-1]
     return response.content, file_name
+
+def summarize_transcript(api_key, transcript, language):
+    client = OpenAI(api_key=api_key)
+    
+    prompt = f"Summarize the following transcript in {language}:\n\n{transcript}\n\nSummary:"
+    
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that summarizes transcripts."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=150
+    )
+    
+    return response.choices[0].message.content.strip()

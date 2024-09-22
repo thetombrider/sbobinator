@@ -11,7 +11,8 @@ from functions import (
     extract_google_drive_file_id,
     download_file_from_google_drive,
     download_youtube_audio,
-    download_audio_from_url
+    download_audio_from_url,
+    summarize_transcript
 )
 
 # Add this near the top of your file, after the other imports
@@ -128,6 +129,20 @@ if audio_source:
                         mime="text/plain"
                     )
 
+                    # Summarize the transcript
+                    with st.spinner("Sto generando il riassunto..."):
+                        summary = summarize_transcript(api_keys["openai"], transcript.text, selected_language)
+                    
+                    st.subheader("Riassunto:")
+                    st.write(summary)
+
+                    st.download_button(
+                        label="Scarica riassunto",
+                        data=summary,
+                        file_name="riassunto.txt",
+                        mime="text/plain"
+                    )
+
                     os.unlink(tmp_file_path)
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {str(e)}")
@@ -156,16 +171,29 @@ if audio_source:
                         raise ValueError("La trascrizione non contiene utterances")
 
                     st.subheader("Trascrizione con diarizzazione:")
+                    full_transcript = ""
                     for utterance in transcript.utterances:
                         st.write(f"Speaker {utterance.speaker}: {utterance.text}")
-
-                    # Prepare the full transcript text with speaker labels
-                    full_transcript = "\n".join([f"Speaker {u.speaker}: {u.text}" for u in transcript.utterances])
+                        full_transcript += f"Speaker {utterance.speaker}: {utterance.text}\n"
 
                     st.download_button(
                         label="Scarica trascrizione",
                         data=full_transcript,
                         file_name="trascrizione_con_diarizzazione.txt",
+                        mime="text/plain"
+                    )
+
+                    # Summarize the transcript
+                    with st.spinner("Sto generando il riassunto..."):
+                        summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
+                    
+                    st.subheader("Riassunto:")
+                    st.write(summary)
+
+                    st.download_button(
+                        label="Scarica riassunto",
+                        data=summary,
+                        file_name="riassunto.txt",
                         mime="text/plain"
                     )
 
