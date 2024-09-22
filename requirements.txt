@@ -3,6 +3,4 @@ openai
 pydub
 yt_dlp
 assemblyai
-tempfile
-os
-b2sdk
+requests
