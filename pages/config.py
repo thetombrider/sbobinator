@@ -51,6 +51,10 @@ def save_api_keys(api_keys):
 def app():
     st.title("Configurazione")
 
+    # Add sidebar with links to API dashboards
+    st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
+    st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
+
     api_keys = load_api_keys()
 
     openai_api_key = st.text_input("API Key di OpenAI", value=api_keys["openai"], type="password")

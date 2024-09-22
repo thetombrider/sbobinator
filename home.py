@@ -42,6 +42,10 @@ st.set_page_config(
 
 st.title("Sbobinator")
 
+# Add sidebar with links to API dashboards
+st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
+st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
+
 # Move the info message to the top
 st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
 
