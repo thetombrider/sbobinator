@@ -76,6 +76,32 @@ def download_youtube_audio(youtube_url):
     except Exception as e:
         raise Exception(f"Errore nel download dell'audio: {str(e)}")
 
+# Custom file uploader for large files
+def custom_file_uploader():
+    custom_html = """
+    <input type="file" id="fileInput" style="display: none;" accept=".mp3,.wav,.ogg,.mp4,.m4a,.flac" onchange="handleFileSelect(event)">
+    <label for="fileInput" style="cursor: pointer; padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px;">Carica file grande (>200MB)</label>
+    <p id="fileName"></p>
+    <script>
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            document.getElementById('fileName').textContent = 'File selezionato: ' + file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                const base64 = btoa(contents);
+                window.parent.postMessage({type: 'file_selected', name: file.name, data: base64}, '*');
+            };
+            reader.readAsBinaryString(file);
+        }
+    }
+    </script>
+    """
+    st.components.v1.html(custom_html, height=100)
+
+
+
 # Backblaze B2 configuration
 B2_APPLICATION_KEY_ID = st.secrets.get("B2_APPLICATION_KEY_ID", "")
 B2_APPLICATION_KEY = st.secrets.get("B2_APPLICATION_KEY", "")
@@ -296,30 +322,6 @@ else:
 # Add footer
 st.markdown("---")
 st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
-
-# Custom file uploader for large files
-def custom_file_uploader():
-    custom_html = """
-    <input type="file" id="fileInput" style="display: none;" accept=".mp3,.wav,.ogg,.mp4,.m4a,.flac" onchange="handleFileSelect(event)">
-    <label for="fileInput" style="cursor: pointer; padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px;">Carica file grande (>200MB)</label>
-    <p id="fileName"></p>
-    <script>
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (file) {
-            document.getElementById('fileName').textContent = 'File selezionato: ' + file.name;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contents = e.target.result;
-                const base64 = btoa(contents);
-                window.parent.postMessage({type: 'file_selected', name: file.name, data: base64}, '*');
-            };
-            reader.readAsBinaryString(file);
-        }
-    }
-    </script>
-    """
-    st.components.v1.html(custom_html, height=100)
 
 # Add this at the end of your script to handle the custom file upload
 if 'large_file_data' not in st.session_state:
