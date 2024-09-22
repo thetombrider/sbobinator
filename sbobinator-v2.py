@@ -60,19 +60,29 @@ def extract_google_drive_file_id(url):
 # Function to download file from Google Drive
 @st.cache_data(show_spinner=False)
 def download_file_from_google_drive(url):
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        try:
-            output = gdown.download(url, temp_file.name, quiet=False)
-            if output is None:
-                raise Exception("Download failed")
-            with open(temp_file.name, 'rb') as file:
+    try:
+        file_id = extract_google_drive_file_id(url)
+        if not file_id:
+            raise ValueError("Invalid Google Drive URL")
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as temp_file:
+            temp_path = temp_file.name
+            gdown.download(id=file_id, output=temp_path, quiet=False)
+
+            if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+                raise Exception("Download failed or file is empty")
+
+            with open(temp_path, 'rb') as file:
                 file_content = file.read()
-            file_name = os.path.basename(output)
-            return file_content, file_name
-        except Exception as e:
-            raise Exception(f"Error downloading from Google Drive: {str(e)}")
-        finally:
-            os.unlink(temp_file.name)
+
+            file_name = os.path.basename(gdown.download(id=file_id, output=None, quiet=True))
+
+        return file_content, file_name
+    except Exception as e:
+        raise Exception(f"Error downloading from Google Drive: {str(e)}")
+    finally:
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 @st.cache_data(show_spinner=False)
 def download_youtube_audio(youtube_url):
@@ -169,6 +179,9 @@ elif input_option == "URL (YouTube o Google Drive)":
                 else:
                     audio_data, file_name = download_audio_from_url(url)
                 
+                if not audio_data:
+                    raise ValueError("No audio data downloaded")
+
                 audio_source = {"type": "local", "data": audio_data}
                 
                 # Determine the MIME type based on the file extension
@@ -178,8 +191,13 @@ elif input_option == "URL (YouTube o Google Drive)":
                 
                 st.audio(io.BytesIO(audio_data), format=mime_type)
                 st.success(f"File scaricato con successo: {file_name}")
+
+                # Debug information
+                st.write(f"File size: {len(audio_data)} bytes")
+                st.write(f"MIME type: {mime_type}")
         except Exception as e:
-            st.error(str(e))
+            st.error(f"Si è verificato un errore: {str(e)}")
+            st.error("Stacktrace:", exc_info=True)
 
 if audio_source:
     # Transcription options
@@ -207,7 +225,9 @@ if audio_source:
     selected_language = st.selectbox("Seleziona la lingua dell'audio", list(languages.keys()))
 
     if st.button("Trascrivi"):
-        if transcription_option == "Senza diarizzazione (OpenAI)":
+        if not audio_source or not audio_source.get("data"):
+            st.error("Nessun audio caricato o scaricato. Carica un file audio o inserisci un URL valido.")
+        elif transcription_option == "Senza diarizzazione (OpenAI)":
             if not openai_api_key or not is_valid_openai_api_key(openai_api_key):
                 st.error("Inserisci una API Key valida di OpenAI nella barra laterale.")
             else:
@@ -260,6 +280,9 @@ if audio_source:
                             )
                         )
 
+                    if not transcript or not transcript.utterances:
+                        raise ValueError("La trascrizione non contiene utterances")
+
                     st.subheader("Trascrizione con diarizzazione:")
                     for utterance in transcript.utterances:
                         st.write(f"Speaker {utterance.speaker}: {utterance.text}")
@@ -276,7 +299,8 @@ if audio_source:
 
                     os.unlink(tmp_file_path)
                 except Exception as e:
-                    st.error(f"Si è verificato un errore: {str(e)}")
+                    st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
+                    st.error("Stacktrace:", exc_info=True)
 else:
     st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
 
