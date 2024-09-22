@@ -7,35 +7,13 @@ import yt_dlp
 import requests
 import re
 import gdown
-import requests
 import io
+import requests
 import mimetypes
+from pages.config import app as config_page, load_api_keys, is_valid_openai_api_key, is_valid_assemblyai_api_key
 
-st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
-
-# Function to validate OpenAI API key
-@st.cache_data(show_spinner=False)
-def is_valid_openai_api_key(api_key):
-    if not api_key:
-        return False
-    try:
-        client = OpenAI(api_key=api_key)
-        client.models.list()
-        return True
-    except Exception:
-        return False
-
-# Function to validate AssemblyAI API key
-@st.cache_data(show_spinner=False)
-def is_valid_assemblyai_api_key(api_key):
-    if not api_key:
-        return False
-    try:
-        headers = {"authorization": api_key}
-        response = requests.get("https://api.assemblyai.com/v2/account", headers=headers)
-        return response.status_code == 200
-    except Exception:
-        return False
+# Add this near the top of your file, after the other imports
+st.set_page_config(page_title="Sbobinator", page_icon="🎙️")
 
 # Function to validate YouTube URL
 def is_valid_youtube_url(url):
@@ -123,36 +101,15 @@ def download_audio_from_url(url):
     file_name = url.split("/")[-1]
     return response.content, file_name
 
-# Sidebar for API key inputs and dashboard links
-st.sidebar.title("Configurazioni API")
+st.title("Sbobinator")
 
-# OpenAI section
-st.sidebar.subheader("OpenAI")
-openai_api_key = st.sidebar.text_input("Inserisci la tua API Key di OpenAI", type="password")
-st.sidebar.markdown("[Dashboard OpenAI](https://platform.openai.com/account/api-keys)")
-
-# Check OpenAI API key validity
-if openai_api_key:
-    if is_valid_openai_api_key(openai_api_key):
-        st.sidebar.success("API Key di OpenAI valida!")
-    else:
-        st.sidebar.error("API Key di OpenAI non valida. Ricontrolla e riprova.")
-
-st.sidebar.markdown("---")
-
-# AssemblyAI section
-st.sidebar.subheader("AssemblyAI")
-assemblyai_api_key = st.sidebar.text_input("Inserisci la tua API Key di AssemblyAI", type="password")
-st.sidebar.markdown("[Dashboard AssemblyAI](https://www.assemblyai.com/app/account)")
-
-# Check AssemblyAI API key validity
-if assemblyai_api_key:
-    if is_valid_assemblyai_api_key(assemblyai_api_key):
-        st.sidebar.success("API Key di AssemblyAI valida!")
-    else:
-        st.sidebar.error("API Key di AssemblyAI non valida. Ricontrolla e riprova.")
-
-st.title("Trascrittore Audio")
+# Check API keys and show alerts
+api_keys = load_api_keys()
+if is_valid_openai_api_key(api_keys["openai"]) and is_valid_assemblyai_api_key(api_keys["assemblyai"]):
+    st.success("Le API keys sono state caricate correttamente.")
+else:
+    st.warning("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
+ 
 
 # Input options
 input_option = st.radio("Scegli il tipo di input:", ("File audio", "URL (YouTube o Google Drive)"))
@@ -196,8 +153,8 @@ elif input_option == "URL (YouTube o Google Drive)":
                 st.write(f"File size: {len(audio_data)} bytes")
                 st.write(f"MIME type: {mime_type}")
         except Exception as e:
-            st.error(f"Si è verificato un errore: {str(e)}")
-            st.error("Stacktrace:", exc_info=True)
+            st.error(f"Si è verificato un errore durante il download o l'elaborazione dell'audio: {str(e)}")
+            st.error("Per favore, controlla l'URL e riprova. Se il problema persiste, potrebbe essere un problema temporaneo con il servizio di")
 
 if audio_source:
     # Transcription options
@@ -228,11 +185,11 @@ if audio_source:
         if not audio_source or not audio_source.get("data"):
             st.error("Nessun audio caricato o scaricato. Carica un file audio o inserisci un URL valido.")
         elif transcription_option == "Senza diarizzazione (OpenAI)":
-            if not openai_api_key or not is_valid_openai_api_key(openai_api_key):
-                st.error("Inserisci una API Key valida di OpenAI nella barra laterale.")
+            if not api_keys["openai"] or not is_valid_openai_api_key(api_keys["openai"]):
+                st.error("Inserisci una API Key valida di OpenAI nella pagina di configurazione.")
             else:
                 try:
-                    client = OpenAI(api_key=openai_api_key)
+                    client = OpenAI(api_key=api_keys["openai"])
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_name.split('.')[-1]) as tmp_file:
                         tmp_file.write(audio_source["data"])
@@ -260,11 +217,11 @@ if audio_source:
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {str(e)}")
         else:  # With diarization (AssemblyAI)
-            if not assemblyai_api_key or not is_valid_assemblyai_api_key(assemblyai_api_key):
-                st.error("Inserisci una API Key valida di AssemblyAI nella barra laterale.")
+            if not api_keys["assemblyai"] or not is_valid_assemblyai_api_key(api_keys["assemblyai"]):
+                st.error("Inserisci una API Key valida di AssemblyAI nella pagina di configurazione.")
             else:
                 try:
-                    aai.settings.api_key = assemblyai_api_key
+                    aai.settings.api_key = api_keys["assemblyai"]
                     transcriber = aai.Transcriber()
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_name.split('.')[-1]) as tmp_file:
