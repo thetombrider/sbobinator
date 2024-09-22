@@ -76,20 +76,27 @@ def download_youtube_audio(youtube_url):
         raise Exception(f"Errore nel download dell'audio: {str(e)}")
 
 # Backblaze B2 configuration
-B2_APPLICATION_KEY_ID = st.secrets["0055729208aee8a0000000005"]
-B2_APPLICATION_KEY = st.secrets["K005SbioF1dzpUMZou2LnAz8U7Diudc"]
-B2_BUCKET_NAME = st.secrets["sbobinator-audio-files"]
+B2_APPLICATION_KEY_ID = st.secrets.get("B2_APPLICATION_KEY_ID", "")
+B2_APPLICATION_KEY = st.secrets.get("B2_APPLICATION_KEY", "")
+B2_BUCKET_NAME = st.secrets.get("B2_BUCKET_NAME", "")
 
-# Initialize B2 API
-info = InMemoryAccountInfo()
-b2_api = B2Api(info)
-b2_api.authorize_account("production", B2_APPLICATION_KEY_ID, B2_APPLICATION_KEY)
-b2_bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
+# Initialize B2 API only if credentials are available
+b2_api = None
+b2_bucket = None
+if B2_APPLICATION_KEY_ID and B2_APPLICATION_KEY and B2_BUCKET_NAME:
+    info = InMemoryAccountInfo()
+    b2_api = B2Api(info)
+    b2_api.authorize_account("production", B2_APPLICATION_KEY_ID, B2_APPLICATION_KEY)
+    b2_bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
 
 def upload_to_b2(file_data, file_name):
     """Upload a file to Backblaze B2 and return the file ID."""
-    file_info = b2_bucket.upload_bytes(file_data, file_name)
-    return file_info.id_
+    if b2_bucket:
+        file_info = b2_bucket.upload_bytes(file_data, file_name)
+        return file_info.id_
+    else:
+        st.warning("Backblaze B2 non configurato. Il file verrà elaborato localmente.")
+        return None
 
 # Sidebar for API key inputs and dashboard links
 st.sidebar.title("Configurazioni API")
@@ -111,7 +118,7 @@ st.sidebar.markdown("---")
 # AssemblyAI section
 st.sidebar.subheader("AssemblyAI")
 assemblyai_api_key = st.sidebar.text_input("Inserisci la tua API Key di AssemblyAI", type="password")
-st.sidebar.markdown("[Dashboard AssemblyAI](https://www.assemblyai.com/app)")
+st.sidebar.markdown("[Dashboard AssemblyAI](https://www.assemblyai.com/app/account)")
 
 # Check AssemblyAI API key validity
 if assemblyai_api_key:
@@ -132,25 +139,36 @@ if input_option == "File audio":
     uploaded_file = st.file_uploader("Carica un file audio", type=["mp3", "wav", "ogg", "mp4", "m4a", "flac"])
     if uploaded_file is not None:
         file_size = uploaded_file.size / (1024 * 1024)  # Size in MB
-        if file_size > 200:
+        if file_size > 200 and b2_bucket:
             with st.spinner("Caricamento del file su storage esterno..."):
                 file_id = upload_to_b2(uploaded_file.getvalue(), uploaded_file.name)
-                audio_source = {"type": "b2", "file_id": file_id}
-                st.success("File caricato con successo.")
+                if file_id:
+                    audio_source = {"type": "b2", "file_id": file_id}
+                    st.success("File caricato con successo.")
+                else:
+                    audio_source = {"type": "local", "data": uploaded_file.getvalue()}
+                    st.warning("Il file verrà elaborato localmente.")
         else:
             audio_source = {"type": "local", "data": uploaded_file.getvalue()}
             st.audio(uploaded_file)
         file_name = uploaded_file.name
 elif input_option == "URL YouTube":
     youtube_url = st.text_input("Inserisci l'URL del video YouTube")
-    if youtube_url and is_valid_youtube_url(youtube_url):
-        try:
-            with st.spinner("Sto scaricando l'audio dal video YouTube..."):
-                audio_data, file_name = download_youtube_audio(youtube_url)
-            audio_source = {"type": "local", "data": audio_data}
-            st.audio(audio_data)
-        except Exception as e:
-            st.error(str(e))
+    if youtube_url:
+        if is_valid_youtube_url(youtube_url):
+            try:
+                with st.spinner("Sto scaricando l'audio dal video YouTube..."):
+                    audio_data, file_name = download_youtube_audio(youtube_url)
+                audio_source = {"type": "local", "data": audio_data}
+                st.audio(audio_data)
+            except Exception as e:
+                st.error(str(e))
+                audio_data = None
+        else:
+            st.error("URL YouTube non valido. Inserisci un URL valido.")
+            audio_data = None
+    else:
+        audio_data = None
 
 if audio_source:
     # Transcription options
@@ -187,10 +205,10 @@ if audio_source:
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_name.split('.')[-1]) as tmp_file:
                         if audio_source["type"] == "b2":
-                            file_data = b2_bucket.download_file_by_id(audio_source["file_id"]).read()
+                            file_data = b2_bucket.download_file_by_id(audio_source["file_id"])
+                            tmp_file.write(file_data.read())
                         else:
-                            file_data = audio_source["data"]
-                        tmp_file.write(file_data)
+                            tmp_file.write(audio_source["data"])
                         tmp_file_path = tmp_file.name
 
                     with st.spinner("Sto trascrivendo..."):
