@@ -51,6 +51,9 @@ def save_api_keys(api_keys):
 def app():
     st.title("Configurazione")
 
+    # Add this section for sidebar navigation
+    st.sidebar.title("Navigation")
+
     api_keys = load_api_keys()
 
     openai_api_key = st.text_input("API Key di OpenAI", value=api_keys["openai"], type="password")
