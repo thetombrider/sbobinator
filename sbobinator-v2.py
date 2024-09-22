@@ -147,7 +147,7 @@ if audio_source:
     </small>
     """, unsafe_allow_html=True)
 
-    # Language selection (for OpenAI)
+    # Language selection (for both OpenAI and AssemblyAI)
     languages = {
         "Italiano": "it",
         "English": "en",
@@ -205,7 +205,10 @@ if audio_source:
                     with st.spinner("Sto trascrivendo con diarizzazione..."):
                         transcript = transcriber.transcribe(
                             tmp_file_path,
-                            config=aai.TranscriptionConfig(speaker_labels=True)
+                            config=aai.TranscriptionConfig(
+                                speaker_labels=True,
+                                language_code=languages[selected_language]
+                            )
                         )
 
                     st.subheader("Trascrizione con diarizzazione:")
