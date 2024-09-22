@@ -6,6 +6,7 @@ import os
 import yt_dlp
 import requests
 import re
+import gdown
 
 st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
 
@@ -54,74 +55,58 @@ def extract_google_drive_file_id(url):
     return None
 
 # Function to download file from Google Drive
-def download_file_from_google_drive(file_id):
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = get_confirm_token(response)
-    if token:
-        params = {'id': file_id, 'confirm': token}
-        response = session.get(URL, params=params, stream=True)
-    return response.content
-
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-    return None
-
-# Modified function to handle both YouTube and Google Drive URLs
 @st.cache_data(show_spinner=False)
-def download_audio_from_url(url):
-    if "youtube.com" in url or "youtu.be" in url:
-        # YouTube URL handling (keep existing YouTube download logic)
+def download_file_from_google_drive(url):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
         try:
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': '%(title)s.%(ext)s'
-            }
-            
-            with tempfile.TemporaryDirectory() as temp_dir:
-                ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
-                
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-                    
-                files = os.listdir(temp_dir)
-                if not files:
-                    raise ValueError("Nessun file audio scaricato")
-                
-                file_name = files[0]
-                file_path = os.path.join(temp_dir, file_name)
-                
-                with open(file_path, 'rb') as audio_file:
-                    audio_data = audio_file.read()
-            
-            return audio_data, file_name
+            output = gdown.download(url, temp_file.name, quiet=False)
+            if output is None:
+                raise Exception("Download failed")
+            with open(temp_file.name, 'rb') as file:
+                file_content = file.read()
+            file_name = os.path.basename(output)
+            return file_content, file_name
         except Exception as e:
-            raise Exception(f"Errore nel download dell'audio da YouTube: {str(e)}")
-    elif "drive.google.com" in url:
-        # Google Drive URL handling
-        file_id = extract_google_drive_file_id(url)
-        if file_id:
-            try:
-                file_content = download_file_from_google_drive(file_id)
-                file_name = f"google_drive_audio_{file_id}.mp3"  # Default name, might not be accurate
-                return file_content, file_name
-            except Exception as e:
-                raise Exception(f"Errore nel download dell'audio da Google Drive: {str(e)}")
-        else:
-            raise ValueError("URL di Google Drive non valido. Assicurati che il link sia condiviso pubblicamente.")
-    else:
-        raise ValueError("URL non supportato. Inserisci un URL valido di YouTube o Google Drive.")
+            raise Exception(f"Error downloading from Google Drive: {str(e)}")
+        finally:
+            os.unlink(temp_file.name)
+
+@st.cache_data(show_spinner=False)
+def download_youtube_audio(youtube_url):
+    try:
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': '%(title)s.%(ext)s'
+        }
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([youtube_url])
+                
+            # Find the downloaded file
+            files = os.listdir(temp_dir)
+            if not files:
+                raise ValueError("Nessun file audio scaricato")
+            
+            file_name = files[0]
+            file_path = os.path.join(temp_dir, file_name)
+            
+            with open(file_path, 'rb') as audio_file:
+                audio_data = audio_file.read()
+        
+        return audio_data, file_name
+    except Exception as e:
+        raise Exception(f"Errore nel download dell'audio: {str(e)}")
 
 # Sidebar for API key inputs and dashboard links
-st.sidebar.title("Inserisci le tue API Keys")
+st.sidebar.title("Configurazioni API")
 
 # OpenAI section
 st.sidebar.subheader("OpenAI")
@@ -149,10 +134,9 @@ if assemblyai_api_key:
     else:
         st.sidebar.error("API Key di AssemblyAI non valida. Ricontrolla e riprova.")
 
-st.title("Sbobinator")
-st.subheader("Il tuo assistente per le trascrizioni audio")
+st.title("Trascrittore Audio")
 
-# Modified input options
+# Input options
 input_option = st.radio("Scegli il tipo di input:", ("File audio", "URL (YouTube o Google Drive)"))
 
 audio_source = None
@@ -172,7 +156,8 @@ elif input_option == "URL (YouTube o Google Drive)":
             with st.spinner("Sto scaricando l'audio dall'URL..."):
                 audio_data, file_name = download_audio_from_url(url)
             audio_source = {"type": "local", "data": audio_data}
-            st.audio(audio_data)
+            st.audio(audio_data, format='audio/mp3')
+            st.success(f"File scaricato con successo: {file_name}")
         except Exception as e:
             st.error(str(e))
 

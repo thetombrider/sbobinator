@@ -4,3 +4,4 @@ pydub
 yt_dlp
 assemblyai
 requests
+gdown
