@@ -7,7 +7,7 @@ import yt_dlp
 import requests
 import re
 
-st.set_page_config(layout="wide", page_title="Trascrittore Audio", page_icon="🎙️")
+st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
 
 # Function to validate OpenAI API key
 @st.cache_data(show_spinner=False)
