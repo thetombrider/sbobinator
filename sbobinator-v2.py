@@ -7,7 +7,7 @@ import yt_dlp
 import requests
 import re
 import gdown
-
+import requests
 st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
 
 # Function to validate OpenAI API key
@@ -104,6 +104,11 @@ def download_youtube_audio(youtube_url):
         return audio_data, file_name
     except Exception as e:
         raise Exception(f"Errore nel download dell'audio: {str(e)}")
+
+def download_audio_from_url(url):
+    response = requests.get(url)
+    file_name = url.split("/")[-1]
+    return response.content, file_name
 
 # Sidebar for API key inputs and dashboard links
 st.sidebar.title("Configurazioni API")
