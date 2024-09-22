@@ -102,7 +102,8 @@ if assemblyai_api_key:
     else:
         st.sidebar.error("API Key di AssemblyAI non valida. Ricontrolla e riprova.")
 
-st.title("Trascrittore Audio")
+st.title("Sbobinator")
+st.header("Il tuo assistente per le trascrizioni audio")
 
 # Input options
 input_option = st.radio("Scegli il tipo di input:", ("File audio", "URL YouTube"))
