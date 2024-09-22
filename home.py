@@ -204,8 +204,6 @@ if audio_source:
                 except Exception as e:
                     st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
                     st.error("Stacktrace:", exc_info=True)
-else:
-    None
 
 # Add footer
 st.markdown("---")
