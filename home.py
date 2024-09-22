@@ -15,8 +15,30 @@ from functions import (
     summarize_transcript
 )
 
-# Add this near the top of your file, after the other imports
-st.set_page_config(page_title="Sbobinator", page_icon="🎙️")
+# Add this at the very beginning of your file
+st.set_page_config(
+    page_title="Sbobinator",
+    page_icon="🎙️",
+    menu_items={
+        'About': """
+        # Sbobinator
+
+        Sbobinator è un'applicazione web avanzata per la trascrizione e il riassunto di file audio, 
+        utilizzando tecnologie all'avanguardia come OpenAI Whisper e AssemblyAI.
+
+        ## Caratteristiche principali:
+        - Trascrizione di file audio caricati localmente
+        - Supporto per l'elaborazione di audio da URL di YouTube e Google Drive
+        - Opzione di trascrizione con o senza diarizzazione (separazione degli speaker)
+        - Generazione automatica di riassunti delle trascrizioni
+        - Supporto multilingua
+
+        Creato con ❤️ da Tommy
+
+        Versione: 1.0.0
+        """
+    }
+)
 
 st.title("Sbobinator")
 
