@@ -97,15 +97,24 @@ def download_audio_from_url(url):
 def summarize_transcript(api_key, transcript, language):
     client = OpenAI(api_key=api_key)
     
-    prompt = f"Summarize the following transcript in {language}:\n\n{transcript}\n\nSummary:"
+    prompt = f"""Summarize the following transcript in {language}. 
+    Focus on the main topics discussed, key points made, and any important conclusions or decisions reached.
+    If the transcript includes multiple speakers, try to capture the essence of their contributions without necessarily attributing specific points to individuals.
+    Aim for a concise yet comprehensive summary that gives a clear overview of the content.
+    If there are any standout quotes or particularly important moments, include those.
+    
+    Transcript:
+    {transcript}
+    
+    Summary:"""
     
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant that summarizes transcripts."},
+            {"role": "system", "content": "You are a skilled assistant specializing in summarizing transcripts. Your summaries are clear, concise, and capture the essence of the discussion."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=150
+        max_tokens=300  # Increased token limit for a more detailed summary
     )
     
     return response.choices[0].message.content.strip()
