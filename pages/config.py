@@ -29,12 +29,12 @@ def is_valid_assemblyai_api_key(api_key):
         return False
 
 def load_api_keys():
-    if 'api_keys' not in st.session_state:
-        try:
-            st.session_state.api_keys = st.secrets["api_keys"]
-        except KeyError:
-            st.session_state.api_keys = {"openai": "", "assemblyai": ""}
-    return st.session_state.api_keys
+    if 'api_keys' in st.session_state:
+        return st.session_state.api_keys
+    try:
+        return st.secrets["api_keys"]
+    except KeyError:
+        return {"openai": "", "assemblyai": ""}
 
 def load_and_validate_api_keys():
     keys = load_api_keys()
@@ -46,11 +46,7 @@ def load_and_validate_api_keys():
 
 def save_api_keys(api_keys):
     st.session_state.api_keys = api_keys
-    if os.environ.get("STREAMLIT_SERVER_RUNNING"):
-        st.secrets["api_keys"] = api_keys
-    else:
-        with open(".streamlit/secrets.toml", "w") as f:
-            f.write(f"api_keys = {json.dumps(api_keys)}")
+    st.success("API Keys saved successfully in session state!")
 
 def app():
     st.title("Configurazione")
