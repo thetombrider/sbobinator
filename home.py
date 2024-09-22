@@ -20,6 +20,9 @@ st.set_page_config(page_title="Sbobinator", page_icon="🎙️")
 
 st.title("Sbobinator")
 
+# Move the info message to the top
+st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
+
 # Check API keys and show alerts
 api_keys = load_api_keys()
 if is_valid_openai_api_key(api_keys["openai"]) and is_valid_assemblyai_api_key(api_keys["assemblyai"]):
