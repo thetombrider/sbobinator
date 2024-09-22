@@ -74,7 +74,7 @@ def download_youtube_audio(youtube_url):
         raise Exception(f"Errore nel download dell'audio: {str(e)}")
 
 # Sidebar for API key inputs and dashboard links
-st.sidebar.title("Configurazioni API")
+st.sidebar.title("Inserisci le tue API Keys")
 
 # OpenAI section
 st.sidebar.subheader("OpenAI")
