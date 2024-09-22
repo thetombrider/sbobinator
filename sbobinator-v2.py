@@ -39,39 +39,83 @@ def is_valid_youtube_url(url):
     match = re.match(youtube_regex, url)
     return bool(match)
 
+# Function to validate and extract Google Drive file ID
+def extract_google_drive_file_id(url):
+    patterns = [
+        r'https://drive\.google\.com/file/d/([\w-]+)',
+        r'https://drive\.google\.com/open\?id=([\w-]+)',
+        r'https://drive\.google\.com/uc\?id=([\w-]+)'
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+# Function to download file from Google Drive
+def download_file_from_google_drive(file_id):
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = get_confirm_token(response)
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+    return response.content
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+# Modified function to handle both YouTube and Google Drive URLs
 @st.cache_data(show_spinner=False)
-def download_youtube_audio(youtube_url):
-    try:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': '%(title)s.%(ext)s'
-        }
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
+def download_audio_from_url(url):
+    if "youtube.com" in url or "youtu.be" in url:
+        # YouTube URL handling (keep existing YouTube download logic)
+        try:
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': '%(title)s.%(ext)s'
+            }
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([youtube_url])
+            with tempfile.TemporaryDirectory() as temp_dir:
+                ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
                 
-            # Find the downloaded file
-            files = os.listdir(temp_dir)
-            if not files:
-                raise ValueError("Nessun file audio scaricato")
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+                    
+                files = os.listdir(temp_dir)
+                if not files:
+                    raise ValueError("Nessun file audio scaricato")
+                
+                file_name = files[0]
+                file_path = os.path.join(temp_dir, file_name)
+                
+                with open(file_path, 'rb') as audio_file:
+                    audio_data = audio_file.read()
             
-            file_name = files[0]
-            file_path = os.path.join(temp_dir, file_name)
-            
-            with open(file_path, 'rb') as audio_file:
-                audio_data = audio_file.read()
-        
-        return audio_data, file_name
-    except Exception as e:
-        raise Exception(f"Errore nel download dell'audio: {str(e)}")
+            return audio_data, file_name
+        except Exception as e:
+            raise Exception(f"Errore nel download dell'audio da YouTube: {str(e)}")
+    else:
+        # Google Drive URL handling
+        file_id = extract_google_drive_file_id(url)
+        if file_id:
+            try:
+                file_content = download_file_from_google_drive(file_id)
+                file_name = f"google_drive_audio_{file_id}.mp3"  # Default name, might not be accurate
+                return file_content, file_name
+            except Exception as e:
+                raise Exception(f"Errore nel download dell'audio da Google Drive: {str(e)}")
+        else:
+            raise ValueError("URL non valido. Inserisci un URL valido di YouTube o Google Drive.")
 
 # Sidebar for API key inputs and dashboard links
 st.sidebar.title("Inserisci le tue API Keys")
@@ -105,8 +149,8 @@ if assemblyai_api_key:
 st.title("Sbobinator")
 st.subheader("Il tuo assistente per le trascrizioni audio")
 
-# Input options
-input_option = st.radio("Scegli il tipo di input:", ("File audio", "URL YouTube"))
+# Modified input options
+input_option = st.radio("Scegli il tipo di input:", ("File audio", "URL (YouTube o Google Drive)"))
 
 audio_source = None
 file_name = None
@@ -118,19 +162,16 @@ if input_option == "File audio":
         st.audio(uploaded_file)
         file_name = uploaded_file.name
 
-elif input_option == "URL YouTube":
-    youtube_url = st.text_input("Inserisci l'URL del video YouTube")
-    if youtube_url:
-        if is_valid_youtube_url(youtube_url):
-            try:
-                with st.spinner("Sto scaricando l'audio dal video YouTube..."):
-                    audio_data, file_name = download_youtube_audio(youtube_url)
-                audio_source = {"type": "local", "data": audio_data}
-                st.audio(audio_data)
-            except Exception as e:
-                st.error(str(e))
-        else:
-            st.error("URL YouTube non valido. Inserisci un URL valido.")
+elif input_option == "URL (YouTube o Google Drive)":
+    url = st.text_input("Inserisci l'URL del video YouTube o del file audio su Google Drive")
+    if url:
+        try:
+            with st.spinner("Sto scaricando l'audio dall'URL..."):
+                audio_data, file_name = download_audio_from_url(url)
+            audio_source = {"type": "local", "data": audio_data}
+            st.audio(audio_data)
+        except Exception as e:
+            st.error(str(e))
 
 if audio_source:
     # Transcription options
@@ -229,7 +270,7 @@ if audio_source:
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {str(e)}")
 else:
-    st.info("Carica un file audio o inserisci un URL YouTube per iniziare.")
+    st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
 
 # Add footer
 st.markdown("---")
