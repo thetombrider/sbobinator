@@ -1,18 +1,16 @@
-# 🎈 Blank app template
+# Sbobinator
 
-A simple Streamlit app template for you to modify!
+Questo è un semplice tool per trascrivere file audio usando il modello Whisper.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+### Come eseguirlo sul tuo computer
 
-### How to run it on your own machine
-
-1. Install the requirements
+1. Installa le dipendenze
 
    ```
    $ pip install -r requirements.txt
    ```
 
-2. Run the app
+2. Avvia l'app
 
    ```
    $ streamlit run streamlit_app.py
