@@ -8,6 +8,7 @@ import requests
 import re
 import gdown
 import requests
+import io
 st.set_page_config(layout="wide", page_title="Sbobinator", page_icon="🎙️")
 
 # Function to validate OpenAI API key
@@ -159,10 +160,16 @@ elif input_option == "URL (YouTube o Google Drive)":
     if url:
         try:
             with st.spinner("Sto scaricando l'audio dall'URL..."):
-                audio_data, file_name = download_audio_from_url(url)
-            audio_source = {"type": "local", "data": audio_data}
-            st.audio(audio_data, format='audio/mp3')
-            st.success(f"File scaricato con successo: {file_name}")
+                if is_valid_youtube_url(url):
+                    audio_data, file_name = download_youtube_audio(url)
+                elif extract_google_drive_file_id(url):
+                    audio_data, file_name = download_file_from_google_drive(url)
+                else:
+                    audio_data, file_name = download_audio_from_url(url)
+                
+                audio_source = {"type": "local", "data": audio_data}
+                st.audio(io.BytesIO(audio_data), format='audio/mp3')
+                st.success(f"File scaricato con successo: {file_name}")
         except Exception as e:
             st.error(str(e))
 
