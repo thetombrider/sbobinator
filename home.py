@@ -205,7 +205,7 @@ if audio_source:
                     st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
                     st.error("Stacktrace:", exc_info=True)
 else:
-    st.info("Carica un file audio o inserisci un URL YouTube o Google Drive per iniziare.")
+    None
 
 # Add footer
 st.markdown("---")
