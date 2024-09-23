@@ -67,7 +67,6 @@ def app():
             "assemblyai": assemblyai_api_key
         }
         save_api_keys(new_api_keys)
-        st.success("API Keys salvate con successo!")
 
 if __name__ == "__main__":
     app()
