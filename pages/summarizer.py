@@ -48,6 +48,12 @@ if uploaded_file is not None:
     file_content = uploaded_file.read().decode("utf-8")
     st.text_area("Contenuto del file", file_content, height=300)
 
+    if 'summary' not in st.session_state:
+        st.session_state['summary'] = ''
+
+    if 'email' not in st.session_state:
+        st.session_state['email'] = ''
+
     if st.button("Genera Riassunto"):
         if not openai_key_valid:
             st.error("API Key di OpenAI non valida o mancante. Per favore, inseriscila nella pagina di configurazione.")
@@ -67,44 +73,44 @@ if uploaded_file is not None:
                     # Generate final summary
                     final_summary = summarize_chunk(client, combined_summary)
                     
-                    st.subheader("Riassunto:")
-                    st.write(final_summary)
-
-                    # Store the summary in session state
                     st.session_state['summary'] = final_summary
-
-                    # Add download button for summary
-                    summary_filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_riassunto.txt"
-                    st.download_button(
-                        label="Scarica riassunto come TXT",
-                        data=final_summary,
-                        file_name=summary_filename,
-                        mime="text/plain"
-                    )
-
-                    # Email sending section
-                    st.subheader("Invia riassunto via email")
-                    email = st.text_input("Inserisci il tuo indirizzo email")
-
-                    if st.button("Invia Email"):
-                        if not email:
-                            st.error("Per favore, inserisci un indirizzo email valido.")
-                        else:
-                            email_body = f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
-
-                            with st.spinner("Invio email in corso..."):
-                                status_code, response = send_email(
-                                    email,
-                                    "Riassunto del Testo",
-                                    email_body
-                                )
-                                if status_code == 200:
-                                    st.success("Email inviata con successo!")
-                                else:
-                                    st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
 
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {str(e)}")
+
+    if st.session_state['summary']:
+        st.subheader("Riassunto:")
+        st.write(st.session_state['summary'])
+
+        # Add download button for summary
+        summary_filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_riassunto.txt"
+        st.download_button(
+            label="Scarica riassunto come TXT",
+            data=st.session_state['summary'],
+            file_name=summary_filename,
+            mime="text/plain"
+        )
+
+        # Email sending section
+        st.subheader("Invia riassunto via email")
+        st.session_state['email'] = st.text_input("Inserisci il tuo indirizzo email", value=st.session_state['email'])
+
+        if st.button("Invia Email"):
+            if not st.session_state['email']:
+                st.error("Per favore, inserisci un indirizzo email valido.")
+            else:
+                email_body = f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
+
+                with st.spinner("Invio email in corso..."):
+                    status_code, response = send_email(
+                        st.session_state['email'],
+                        "Riassunto del Testo",
+                        email_body
+                    )
+                    if status_code == 200:
+                        st.success("Email inviata con successo!")
+                    else:
+                        st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
 
 # Add footer
 st.markdown("---")
