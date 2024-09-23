@@ -39,7 +39,7 @@ def summarize_chunk(client, chunk):
             {"role": "system", "content": "You are a skilled assistant specializing in summarizing text. Your summaries are clear, concise, and capture the essence of the content."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=400
+        max_tokens=1000
     )
     return response.choices[0].message.content.strip()
 
