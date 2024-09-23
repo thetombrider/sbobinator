@@ -197,7 +197,8 @@ def send_email(to_email, subject, body):
         return response.status_code, response.json()
     except requests.exceptions.RequestException as e:
         error_status = e.response.status_code if e.response else None
-        error_response = e.response.json() if e.response else str(e)
+        error_response = e.response.text if e.response else str(e)
+        st.error(f"Errore nell'invio dell'email: {error_response}")
         return error_status, error_response
 
 def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
@@ -220,5 +221,5 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 ])
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
-        
-    return full_transcript
+    
+    return full_transcript, summary

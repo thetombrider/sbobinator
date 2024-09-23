@@ -157,6 +157,14 @@ if audio_source:
         st.subheader("Trascrizione completa")
         st.write(st.session_state['full_transcript'])
 
+        # Add download button for transcript
+        st.download_button(
+            label="Scarica trascrizione come TXT",
+            data=st.session_state['full_transcript'],
+            file_name="trascrizione.txt",
+            mime="text/plain"
+        )
+
         # Option to generate summary
         if st.button("Genera Riassunto"):
             summary = summarize_transcript(
@@ -171,6 +179,14 @@ if audio_source:
         if st.session_state['summary']:
             st.subheader("Riassunto")
             st.write(st.session_state['summary'])
+
+            # Add download button for summary
+            st.download_button(
+                label="Scarica riassunto come TXT",
+                data=st.session_state['summary'],
+                file_name="riassunto.txt",
+                mime="text/plain"
+            )
 
         # Email sending section
         st.subheader("Invia trascrizione via email")
