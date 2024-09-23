@@ -158,10 +158,11 @@ if audio_source:
         st.write(st.session_state['full_transcript'])
 
         # Add download button for transcript
+        transcript_filename = f"{file_name.rsplit('.', 1)[0]}_trascrizione.txt"
         st.download_button(
             label="Scarica trascrizione come TXT",
             data=st.session_state['full_transcript'],
-            file_name="trascrizione.txt",
+            file_name=transcript_filename,
             mime="text/plain"
         )
 
@@ -181,10 +182,11 @@ if audio_source:
             st.write(st.session_state['summary'])
 
             # Add download button for summary
+            summary_filename = f"{file_name.rsplit('.', 1)[0]}_riassunto.txt"
             st.download_button(
                 label="Scarica riassunto come TXT",
                 data=st.session_state['summary'],
-                file_name="riassunto.txt",
+                file_name=summary_filename,
                 mime="text/plain"
             )
 
