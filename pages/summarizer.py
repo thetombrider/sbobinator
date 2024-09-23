@@ -23,7 +23,7 @@ if openai_key_valid:
 st.title("Summarizer")
 
 if not openai_key_valid:
-    st.warning("Inserisci una API Key valida di OpenAI nella pagina di configurazione.")
+    st.warning("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
 
 uploaded_file = st.file_uploader("Carica un file di testo", type=["txt"])
 
