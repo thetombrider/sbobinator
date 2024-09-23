@@ -136,15 +136,31 @@ if audio_source:
         if not api_keys["openai"] or not api_keys["assemblyai"]:
             st.error("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
         else:
-            full_transcript, summary = perform_transcription(audio_source, transcription_option, api_keys, selected_language)
-            
+            full_transcript = perform_transcription(
+                audio_source,
+                transcription_option,
+                api_keys,
+                selected_language
+            )
+
             if full_transcript:
+                st.subheader("Trascrizione completa")
+                st.write(full_transcript)
+
+                # Option to generate summary
+                if st.button("Genera Riassunto"):
+                    summary = summarize_transcript(
+                        api_keys["openai"],
+                        full_transcript,
+                        selected_language
+                    )
+                    st.subheader("Riassunto")
+                    st.write(summary)
+
+                # Email sending section
                 st.subheader("Invia trascrizione via email")
                 email = st.text_input("Inserisci il tuo indirizzo email")
-                emails = [email] if email else []
-                send_email_button = st.button("Invia Email")
-    
-                if send_email_button:
+                if st.button("Invia Email"):
                     if not email:
                         st.error("Per favore, inserisci un indirizzo email valido.")
                     else:
@@ -153,17 +169,20 @@ if audio_source:
                             st.error("Resend API Key non configurata. Per favore, inseriscila nella pagina di configurazione.")
                         else:
                             email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p>"
-                            if summary:
+                            if 'summary' in locals():
                                 email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
-                            
+
                             with st.spinner("Invio email in corso..."):
-                                status_code, response = send_email(resend_api_key, emails, "Trascrizione Audio", email_body)
+                                status_code, response = send_email(
+                                    resend_api_key,
+                                    email,
+                                    "Trascrizione Audio",
+                                    email_body
+                                )
                                 if status_code == 200:
                                     st.success("Email inviata con successo!")
-                                elif status_code is None:
-                                    st.error(f"Errore nell'invio dell'email: {response}")
                                 else:
-                                    st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Risposta: {response}")
+                                    st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
 
 # Add footer
 st.markdown("---")

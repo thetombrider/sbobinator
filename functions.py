@@ -175,33 +175,28 @@ def transcribe_with_assemblyai(audio_data, api_key, language):
     return transcript
 
 def send_email(resend_api_key, to_email, subject, body):
-    url = "https://api.resend.com/v1/emails"
+    url = "https://api.resend.com/emails"
     headers = {
         "Authorization": f"Bearer {resend_api_key}",
         "Content-Type": "application/json"
     }
     data = {
-        "from": "Sbobinator <sbobinator@minutohomeserver.xyz>",  # Ensure this domain is verified
-        "to": [to_email],  # 'to' should be a list according to Resend docs
+        "from": "onboarding@resend.dev",  # Use a verified 'from' address
+        "to": [to_email],  # 'to' should be a list
         "subject": subject,
         "html": body
     }
     try:
-        st.info(f"Attempting to send email to {to_email}")
         response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
-        st.success(f"Email sent successfully to {to_email}")
+        response.raise_for_status()
         return response.status_code, response.json()
     except requests.exceptions.RequestException as e:
-        st.error(f"Error sending email: {str(e)}")
-        if e.response is not None:
-            return e.response.status_code, e.response.json()
-        else:
-            return None, str(e)
+        error_status = e.response.status_code if e.response else None
+        error_response = e.response.json() if e.response else str(e)
+        return error_status, error_response
 
 def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
     full_transcript = ""
-    summary = ""
     
     try:
         with st.spinner("Sto trascrivendo..."):
@@ -209,18 +204,16 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
                 full_transcript = transcript.text
             else:
-                transcript = transcribe_with_assemblyai(audio_source["data"], api_keys["assemblyai"], languages[selected_language])
-                full_transcript = "\n".join([f"Speaker {utterance.speaker}: {utterance.text}" for utterance in transcript.utterances])
-
-        st.subheader("Trascrizione completa")
-        st.write(full_transcript)
-
-        if st.button("Genera Riassunto"):
-            summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
-            st.subheader("Riassunto")
-            st.write(summary)
-
+                transcript = transcribe_with_assemblyai(
+                    audio_source["data"],
+                    api_keys["assemblyai"],
+                    languages[selected_language]
+                )
+                full_transcript = "\n".join([
+                    f"Speaker {utterance.speaker}: {utterance.text}"
+                    for utterance in transcript.utterances
+                ])
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
     
-    return full_transcript, summary
+    return full_transcript
