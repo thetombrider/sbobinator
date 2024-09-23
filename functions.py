@@ -5,8 +5,8 @@ import os
 import yt_dlp
 import gdown
 import requests
-import mimetypes
 from openai import OpenAI
+import assemblyai as aai
 
 # Function to validate YouTube URL
 def is_valid_youtube_url(url):
@@ -138,8 +138,33 @@ def add_sidebar_content():
     st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
     st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
 
+def transcribe_with_openai(audio_data, api_key):
+    client = OpenAI(api_key=api_key)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+        temp_audio.write(audio_data)
+        temp_audio.flush()
+        
+        with open(temp_audio.name, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+    
+    os.unlink(temp_audio.name)
+    return transcript
 
-
+def transcribe_with_assemblyai(audio_data, api_key, language):
+    aai.settings.api_key = api_key
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+        temp_audio.write(audio_data)
+        temp_audio.flush()
+        
+        config = aai.TranscriptionConfig(speaker_labels=True, language_code=language)
+        transcript = aai.Transcriber().transcribe(temp_audio.name, config=config)
+    
+    os.unlink(temp_audio.name)
+    return transcript
 
 def send_email(resend_api_key, to_email, subject, body):
     url = "https://api.resend.com/v1/emails"

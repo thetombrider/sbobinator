@@ -15,7 +15,9 @@ from functions import (
     download_audio_from_url,
     summarize_transcript,
     add_sidebar_content,
-    send_email  
+    send_email,
+    transcribe_with_openai,
+    transcribe_with_assemblyai
 )
 
 # Add this at the very beginning of your file
@@ -97,8 +99,8 @@ elif input_option == "URL (YouTube o Google Drive)":
                 st.success(f"File scaricato con successo: {file_name}")
 
                 # Debug information
-                st.write(f"File size: {len(audio_data)} bytes")
-                st.write(f"MIME type: {mime_type}")
+                st.write(f"File size: {len(audio_data) / (1024 * 1024):.2f} MB")
+                #st.write(f"MIME type: {mime_type}")
         except Exception as e:
             st.error(f"Si è verificato un errore durante il download o l'elaborazione dell'audio: {str(e)}")
             st.info("Se il problema persiste con i video di YouTube, prova a utilizzare un URL diverso o a caricare direttamente un file audio.")
@@ -128,146 +130,54 @@ if audio_source:
     }
     selected_language = st.selectbox("Seleziona la lingua dell'audio", list(languages.keys()))
 
+    def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
+        full_transcript = ""
+        summary = ""
+        
+        try:
+            with st.spinner("Sto trascrivendo..."):
+                if transcription_option == "Senza diarizzazione (OpenAI)":
+                    transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
+                    full_transcript = transcript.text
+                else:
+                    transcript = transcribe_with_assemblyai(audio_source["data"], api_keys["assemblyai"], languages[selected_language])
+                    full_transcript = "\n".join([f"Speaker {utterance.speaker}: {utterance.text}" for utterance in transcript.utterances])
+
+            st.subheader("Trascrizione:")
+            st.write(full_transcript)
+
+            if st.button("Genera Riassunto"):
+                summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
+                st.subheader("Riassunto:")
+                st.write(summary)
+
+        except Exception as e:
+            st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
+        
+        return full_transcript, summary
+
     if st.button("Trascrivi"):
-        if not audio_source or not audio_source.get("data"):
-            st.error("Nessun audio caricato o scaricato. Carica un file audio o inserisci un URL valido.")
-        elif transcription_option == "Senza diarizzazione (OpenAI)":
-            if not api_keys["openai"] or not is_valid_openai_api_key(api_keys["openai"]):
-                st.error("Inserisci una API Key valida di OpenAI nella pagina di configurazione.")
-            else:
-                try:
-                    client = OpenAI(api_key=api_keys["openai"])
-
-                    with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_name.split('.')[-1]) as tmp_file:
-                        tmp_file.write(audio_source["data"])
-                        tmp_file_path = tmp_file.name
-
-                    with st.spinner("Sto trascrivendo..."):
-                        with open(tmp_file_path, "rb") as audio_file:
-                            transcript = client.audio.transcriptions.create(
-                                model="whisper-1",
-                                file=audio_file,
-                                language=languages[selected_language]
-                            )
-
-                    st.subheader("Trascrizione:")
-                    st.write(transcript.text)
-
-                    st.download_button(
-                        label="Scarica trascrizione",
-                        data=transcript.text,
-                        file_name="trascrizione.txt",
-                        mime="text/plain"
-                    )
-
-                    # Summarize the transcript
-                    with st.spinner("Sto generando il riassunto..."):
-                        summary = summarize_transcript(api_keys["openai"], transcript.text, selected_language)
-                    
-                    st.subheader("Riassunto:")
-                    st.write(summary)
-
-                    st.download_button(
-                        label="Scarica riassunto",
-                        data=summary,
-                        file_name="riassunto.txt",
-                        mime="text/plain"
-                    )
-
-                    os.unlink(tmp_file_path)
-                except Exception as e:
-                    st.error(f"Si è verificato un errore: {str(e)}")
-        else:  # With diarization (AssemblyAI)
-            if not api_keys["assemblyai"] or not is_valid_assemblyai_api_key(api_keys["assemblyai"]):
-                st.error("Inserisci una API Key valida di AssemblyAI nella pagina di configurazione.")
-            else:
-                try:
-                    aai.settings.api_key = api_keys["assemblyai"]
-                    transcriber = aai.Transcriber()
-
-                    with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_name.split('.')[-1]) as tmp_file:
-                        tmp_file.write(audio_source["data"])
-                        tmp_file_path = tmp_file.name
-
-                    with st.spinner("Sto trascrivendo con diarizzazione..."):
-                        transcript = transcriber.transcribe(
-                            tmp_file_path,
-                            config=aai.TranscriptionConfig(
-                                speaker_labels=True,
-                                language_code=languages[selected_language]
-                            )
-                        )
-
-                    if not transcript or not transcript.utterances:
-                        raise ValueError("La trascrizione non contiene utterances")
-
-                    st.subheader("Trascrizione con diarizzazione:")
-                    full_transcript = ""
-                    for utterance in transcript.utterances:
-                        st.write(f"Speaker {utterance.speaker}: {utterance.text}\n")
-                        full_transcript += f"Speaker {utterance.speaker}: {utterance.text}\n\n"  # Add a blank line between speakers
-
-                    st.download_button(
-                        label="Scarica trascrizione",
-                        data=full_transcript,
-                        file_name="trascrizione_con_diarizzazione.txt",
-                        mime="text/plain"
-                    )
-
-                    # Summarize the transcript
-                    with st.spinner("Sto generando il riassunto..."):
-                        try:
-                            # Check if the API key has access to LeMUR
-                            lemur_summary = None
-                            response = requests.get(
-                                "https://api.assemblyai.com/v2/account",
-                                headers={"authorization": api_keys["assemblyai"]}
-                            )
-                            if response.status_code == 200 and response.json().get("lemur_enabled", False):
-                                # Use LeMUR for summarization
-                                summary = transcriber.lemur.summarize(
-                                    transcript.id,
-                                    context="",
-                                    answer_format="**<topic header>**\n<topic summary>"
-                                )
-                                lemur_summary = summary.response
-                            else:
-                                # Fallback to OpenAI summarization
-                                lemur_summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
-                        except Exception as e:
-                            st.error(f"Errore durante la generazione del riassunto con LeMUR: {str(e)}")
-                            st.error("Utilizzo il fallback con OpenAI per generare il riassunto.")
-                            lemur_summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
-                    
-                    st.subheader("Riassunto:")
-                    st.write(lemur_summary)
-
-                    st.download_button(
-                        label="Scarica riassunto",
-                        data=lemur_summary,
-                        file_name="riassunto.txt",
-                        mime="text/plain"
-                    )
-
-                    os.unlink(tmp_file_path)
-                except Exception as e:
-                    st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
-                    st.error("Stacktrace:", exc_info=True)
-
-    # Email input and send button
-    st.subheader("Invia Trascrizione e Riassunto via Email")
-    email = st.text_input("Inserisci il tuo indirizzo email")
-    if st.button("Invia Email"):
-        if not email:
-            st.error("Per favore, inserisci un indirizzo email valido.")
+        if not api_keys["openai"] or not api_keys["assemblyai"]:
+            st.error("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
         else:
-            email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p><h2>Riassunto</h2><p>{lemur_summary}</p>"
-            status_code, response = send_email(api_keys["resend_api_key"], email, f"Trascrizione e Riassunto - {file_name}", email_body)
-            if status_code == 200:
-                st.success("Email inviata con successo!")
-            else:
-                st.error(f"Errore durante l'invio dell'email: {response}")
+            full_transcript, summary = perform_transcription(audio_source, transcription_option, api_keys, selected_language)
+
+            # Email sending section
+            st.subheader("Invia trascrizione via email")
+            email = st.text_input("Inserisci il tuo indirizzo email")
+            if st.button("Invia Email"):
+                if not email:
+                    st.error("Per favore, inserisci un indirizzo email valido.")
+                else:
+                    email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p>"
+                    if summary:
+                        email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
+                    status_code, response = send_email(api_keys["resend_api_key"], email, "Trascrizione Audio", email_body)
+                    if status_code == 200:
+                        st.success("Email inviata con successo!")
+                    else:
+                        st.error(f"Errore nell'invio dell'email: {response}")
 
 # Add footer
 st.markdown("---")
-st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
+st.markdown("Creato da Tommy usando Streamlit, OpenAI, AssemblyAI e Resend")
