@@ -202,10 +202,14 @@ if audio_source:
                 if st.session_state['summary']:
                     email_body += f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
 
+                # Get the filename without extension
+                filename = file_name.rsplit('.', 1)[0]
+                email_subject = f"Trascrizione e Riassunto di {filename}"
+
                 with st.spinner("Invio email in corso..."):
                     status_code, response = send_email(
                         email,
-                        "Trascrizione Audio",
+                        email_subject,
                         email_body
                     )
                     if status_code == 200:
