@@ -168,7 +168,7 @@ def transcribe_with_assemblyai(audio_data, api_key, language):
         temp_audio.write(audio_data)
         temp_audio.flush()
         
-        config = aai.TranscriptionConfig(speaker_labels=True, language_code=language)
+        config = aai.TranscriptionConfig(speaker_labels=True, language_code=language, summary_model="claude-3.5-sonnet-20240620")
         transcript = aai.Transcriber().transcribe(temp_audio.name, config=config)
     
     os.unlink(temp_audio.name)
