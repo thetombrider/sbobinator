@@ -174,15 +174,21 @@ def transcribe_with_assemblyai(audio_data, api_key, language):
     os.unlink(temp_audio.name)
     return transcript
 
-def send_email(resend_api_key, to_email, subject, body):
+def send_email(to_email, subject, body):
+    if "resend_api_key" not in st.secrets or not st.secrets["resend_api_key"]:
+        st.error("La Resend API Key non è configurata nei secrets.")
+        return None, "Resend API Key mancante."
+
+    resend_api_key = st.secrets["resend_api_key"]
+
     url = "https://api.resend.com/emails"
     headers = {
         "Authorization": f"Bearer {resend_api_key}",
         "Content-Type": "application/json"
     }
     data = {
-        "from": "onboarding@resend.dev",  # Use a verified 'from' address
-        "to": [to_email],  # 'to' should be a list
+        "from": "onboarding@resend.dev",  # Assicurati di utilizzare un indirizzo 'from' verificato
+        "to": [to_email],
         "subject": subject,
         "html": body
     }

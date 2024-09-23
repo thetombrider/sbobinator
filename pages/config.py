@@ -29,24 +29,11 @@ def is_valid_assemblyai_api_key(api_key):
     except Exception:
         return False
 
-def is_valid_resend_api_key(api_key):
-    # Currently, Resend does not provide an endpoint to validate API keys
-    # So we'll assume the user entered a valid key if it's non-empty
-    return bool(api_key)
-
 def load_api_keys():
     if "api_keys" in st.session_state:
         return st.session_state.api_keys
     else:
-        return {"openai": "", "assemblyai": "", "resend_api_key": ""}
-
-def load_and_validate_api_keys():
-    keys = load_api_keys()
-    if not is_valid_openai_api_key(keys["openai"]):
-        keys["openai"] = ""
-    if not is_valid_assemblyai_api_key(keys["assemblyai"]):
-        keys["assemblyai"] = ""
-    return keys
+        return {"openai": "", "assemblyai": ""}
 
 def save_api_keys(api_keys):
     st.session_state.api_keys = api_keys
@@ -74,20 +61,11 @@ def app():
         else:
             st.error("API Key di AssemblyAI non valida. Ricontrolla e riprova.")
 
-    resend_api_key = st.text_input("API Key di Resend", value=api_keys.get("resend_api_key", ""), type="password")
-    if resend_api_key:
-        if is_valid_resend_api_key(resend_api_key):
-            st.success("API Key di Resend inserita.")
-        else:
-            st.error("API Key di Resend non valida. Ricontrolla e riprova.")
-
     if st.button("Salva API Keys"):
         new_api_keys = {
             "openai": openai_api_key,
-            "assemblyai": assemblyai_api_key,
-            "resend_api_key": resend_api_key
+            "assemblyai": assemblyai_api_key
         }
-        # Assuming validation passed for OpenAI and AssemblyAI
         save_api_keys(new_api_keys)
         st.success("API Keys salvate con successo!")
 

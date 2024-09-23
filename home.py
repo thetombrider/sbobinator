@@ -164,25 +164,20 @@ if audio_source:
                     if not email:
                         st.error("Per favore, inserisci un indirizzo email valido.")
                     else:
-                        resend_api_key = api_keys.get("resend_api_key")
-                        if not resend_api_key:
-                            st.error("Resend API Key non configurata. Per favore, inseriscila nella pagina di configurazione.")
-                        else:
-                            email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p>"
-                            if 'summary' in locals():
-                                email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
+                        email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p>"
+                        if 'summary' in locals():
+                            email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
 
-                            with st.spinner("Invio email in corso..."):
-                                status_code, response = send_email(
-                                    resend_api_key,
-                                    email,
-                                    "Trascrizione Audio",
-                                    email_body
-                                )
-                                if status_code == 200:
-                                    st.success("Email inviata con successo!")
-                                else:
-                                    st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
+                        with st.spinner("Invio email in corso..."):
+                            status_code, response = send_email(
+                                email,
+                                "Trascrizione Audio",
+                                email_body
+                            )
+                            if status_code == 200:
+                                st.success("Email inviata con successo!")
+                            else:
+                                st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
 
 # Add footer
 st.markdown("---")
