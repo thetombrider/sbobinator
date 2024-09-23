@@ -203,8 +203,8 @@ if audio_source:
                     st.subheader("Trascrizione con diarizzazione:")
                     full_transcript = ""
                     for utterance in transcript.utterances:
-                        st.write(f"Speaker {utterance.speaker}: {utterance.text}")
-                        full_transcript += f"Speaker {utterance.speaker}: {utterance.text}\n"
+                        st.write(f"Speaker {utterance.speaker}: {utterance.text}\n")
+                        full_transcript += f"Speaker {utterance.speaker}: {utterance.text}\n\n"  # Add a blank line between speakers
 
                     st.download_button(
                         label="Scarica trascrizione",
@@ -256,7 +256,3 @@ if audio_source:
 # Add footer
 st.markdown("---")
 st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
-
-
-
-
