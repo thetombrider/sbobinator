@@ -15,6 +15,7 @@ from functions import (
     summarize_transcript,
     add_sidebar_content
 )
+from pages.summarizer import app as summarizer_page
 
 # Add this at the very beginning of your file
 st.set_page_config(
@@ -34,9 +35,9 @@ st.set_page_config(
         - Generazione automatica di riassunti delle trascrizioni
         - Supporto multilingua
 
-        Creato con ❤️ da Tommy
+        Creato da Tommaso Minuto
 
-        Versione: 1.0.0
+        Versione: 0.1
         """
     }
 )
@@ -234,4 +235,7 @@ if audio_source:
 # Add footer
 st.markdown("---")
 st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
+
+# Add this in the sidebar content function
+st.sidebar.markdown("[Summarizer](summarizer)")
 
