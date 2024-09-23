@@ -100,11 +100,13 @@ if uploaded_file is not None:
                 st.error("Per favore, inserisci un indirizzo email valido.")
             else:
                 email_body = f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
+                filename = uploaded_file.name.rsplit('.', 1)[0]  # Get filename without extension
+                email_subject = f"Riassunto di {filename}"
 
                 with st.spinner("Invio email in corso..."):
                     status_code, response = send_email(
                         st.session_state['email'],
-                        "Riassunto del Testo",
+                        email_subject,
                         email_body
                     )
                     if status_code == 200:
