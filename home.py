@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import assemblyai as aai
 import tempfile
+import requests
 import os
 import io
 import mimetypes
