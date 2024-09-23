@@ -14,7 +14,8 @@ from functions import (
     download_youtube_audio,
     download_audio_from_url,
     summarize_transcript,
-    add_sidebar_content
+    add_sidebar_content,
+    send_email  # Import the send_email function
 )
 
 # Add this at the very beginning of your file
@@ -252,6 +253,20 @@ if audio_source:
                 except Exception as e:
                     st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
                     st.error("Stacktrace:", exc_info=True)
+
+    # Email input and send button
+    st.subheader("Invia Trascrizione e Riassunto via Email")
+    email = st.text_input("Inserisci il tuo indirizzo email")
+    if st.button("Invia Email"):
+        if not email:
+            st.error("Per favore, inserisci un indirizzo email valido.")
+        else:
+            email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p><h2>Riassunto</h2><p>{lemur_summary}</p>"
+            status_code, response = send_email(api_keys["resend"], email, f"Trascrizione e Riassunto - {file_name}", email_body)
+            if status_code == 200:
+                st.success("Email inviata con successo!")
+            else:
+                st.error(f"Errore durante l'invio dell'email: {response}")
 
 # Add footer
 st.markdown("---")

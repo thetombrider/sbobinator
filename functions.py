@@ -123,3 +123,20 @@ def add_sidebar_content():
     st.sidebar.title("API Dashboards")
     st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
     st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
+
+
+resend_api_key = "re_8sWyVNMd_QC6GNqdRfnpLmga66nUWykXy"
+
+def send_email(resend_api_key, to_email, subject, body):
+    url = "https://api.resend.com/v1/emails"
+    headers = {
+        "Authorization": f"Bearer {resend_api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "to": to_email,
+        "subject": subject,
+        "html": body
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.status_code, response.json()
