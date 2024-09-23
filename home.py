@@ -16,7 +16,6 @@ from functions import (
     summarize_transcript,
     add_sidebar_content
 )
-from pages.summarizer import app as summarizer_page
 
 # Add this at the very beginning of your file
 st.set_page_config(
@@ -260,4 +259,10 @@ st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
 
 # Add this in the sidebar content function
 st.sidebar.markdown("[Summarizer](summarizer)")
+
+# Import the summarizer page
+try:
+    from pages.summarizer import app as summarizer_page
+except ImportError as e:
+    st.error(f"Errore durante l'importazione della pagina Summarizer: {str(e)}")
 
