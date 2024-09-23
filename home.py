@@ -17,7 +17,8 @@ from functions import (
     add_sidebar_content,
     send_email,
     transcribe_with_openai,
-    transcribe_with_assemblyai
+    transcribe_with_assemblyai,
+    perform_transcription
 )
 
 # Add this at the very beginning of your file
@@ -130,42 +131,25 @@ if audio_source:
     }
     selected_language = st.selectbox("Seleziona la lingua dell'audio", list(languages.keys()))
 
-    def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
-        full_transcript = ""
-        summary = ""
-        
-        try:
-            with st.spinner("Sto trascrivendo..."):
-                if transcription_option == "Senza diarizzazione (OpenAI)":
-                    transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
-                    full_transcript = transcript.text
-                else:
-                    transcript = transcribe_with_assemblyai(audio_source["data"], api_keys["assemblyai"], languages[selected_language])
-                    full_transcript = "\n".join([f"Speaker {utterance.speaker}: {utterance.text}" for utterance in transcript.utterances])
-
-            st.subheader("Trascrizione:")
-            st.write(full_transcript)
-
-            if st.button("Genera Riassunto"):
-                summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
-                st.subheader("Riassunto:")
-                st.write(summary)
-
-        except Exception as e:
-            st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
-        
-        return full_transcript, summary
-
     if st.button("Trascrivi"):
         if not api_keys["openai"] or not api_keys["assemblyai"]:
             st.error("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
         else:
             full_transcript, summary = perform_transcription(audio_source, transcription_option, api_keys, selected_language)
+            
+            # Display the transcription and summary
+            st.subheader("Trascrizione completa")
+            st.write(full_transcript)
+            if summary:
+                st.subheader("Riassunto")
+                st.write(summary)
 
             # Email sending section
             st.subheader("Invia trascrizione via email")
             email = st.text_input("Inserisci il tuo indirizzo email")
-            if st.button("Invia Email"):
+            send_email_button = st.button("Invia Email")
+            
+            if send_email_button:
                 if not email:
                     st.error("Per favore, inserisci un indirizzo email valido.")
                 else:

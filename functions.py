@@ -179,3 +179,29 @@ def send_email(resend_api_key, to_email, subject, body):
     }
     response = requests.post(url, headers=headers, json=data)
     return response.status_code, response.json()
+
+def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
+    full_transcript = ""
+    summary = ""
+    
+    try:
+        with st.spinner("Sto trascrivendo..."):
+            if transcription_option == "Senza diarizzazione (OpenAI)":
+                transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
+                full_transcript = transcript.text
+            else:
+                transcript = transcribe_with_assemblyai(audio_source["data"], api_keys["assemblyai"], languages[selected_language])
+                full_transcript = "\n".join([f"Speaker {utterance.speaker}: {utterance.text}" for utterance in transcript.utterances])
+
+        st.subheader("Trascrizione completa")
+        st.write(full_transcript)
+
+        if st.button("Genera Riassunto"):
+            summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
+            st.subheader("Riassunto")
+            st.write(summary)
+
+    except Exception as e:
+        st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
+    
+    return full_transcript, summary
