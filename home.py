@@ -141,6 +141,7 @@ if audio_source:
             if full_transcript:
                 st.subheader("Invia trascrizione via email")
                 email = st.text_input("Inserisci il tuo indirizzo email")
+                emails = [email] if email else []
                 send_email_button = st.button("Invia Email")
     
                 if send_email_button:
@@ -156,7 +157,7 @@ if audio_source:
                                 email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
                             
                             with st.spinner("Invio email in corso..."):
-                                status_code, response = send_email(resend_api_key, email, "Trascrizione Audio", email_body)
+                                status_code, response = send_email(resend_api_key, emails, "Trascrizione Audio", email_body)
                                 if status_code == 200:
                                     st.success("Email inviata con successo!")
                                 elif status_code is None:
