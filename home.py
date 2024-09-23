@@ -15,7 +15,7 @@ from functions import (
     download_audio_from_url,
     summarize_transcript,
     add_sidebar_content,
-    send_email  # Import the send_email function
+    send_email  
 )
 
 # Add this at the very beginning of your file
