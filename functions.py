@@ -201,7 +201,7 @@ def send_email(to_email, subject, body):
         st.error(f"Errore nell'invio dell'email: {error_response}")
         return error_status, error_response
 
-def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
+def perform_transcription(audio_source, transcription_option, api_keys, selected_language, assemblyai_transcription_model, assemblyai_summarization_model, assemblyai_summary_type):
     full_transcript = ""
     
     try:
@@ -210,15 +210,20 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
                 full_transcript = transcript.text
             else:
-                transcript = transcribe_with_assemblyai(
-                    audio_source["data"],
-                    api_keys["assemblyai"],
-                    languages[selected_language]
+                config = aai.TranscriptionConfig(
+                    speaker_labels=True,
+                    language_code=languages[selected_language],
+                    model=assemblyai_transcription_model,
+                    summarization=True,
+                    summary_model=assemblyai_summarization_model,
+                    summary_type=assemblyai_summary_type
                 )
+                transcript = aai.Transcriber().transcribe(audio_source["data"], config=config)
                 full_transcript = "\n".join([
                     f"Speaker {utterance.speaker}: {utterance.text}"
                     for utterance in transcript.utterances
                 ])
+                summary = transcript.summary
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
     

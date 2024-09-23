@@ -132,6 +132,24 @@ if audio_source:
     }
     selected_language = st.selectbox("Seleziona la lingua dell'audio", list(languages.keys()))
 
+    # Add model selection to sidebar for AssemblyAI
+    st.sidebar.subheader("Opzioni AssemblyAI")
+    assemblyai_transcription_model = st.sidebar.selectbox(
+        "Modello di Trascrizione",
+        ["default", "enhanced"],
+        format_func=lambda x: "Standard" if x == "default" else "Migliorato"
+    )
+    assemblyai_summarization_model = st.sidebar.selectbox(
+        "Modello di Riassunto LeMUR",
+        ["claude-3.5-sonnet-20240620", "claude-3-opus-20240229"],
+        format_func=lambda x: "Claude 3.5 Sonnet" if x == "claude-3.5-sonnet-20240620" else "Claude 3 Opus"
+    )
+    assemblyai_summary_type = st.sidebar.selectbox(
+        "Tipo di Riassunto",
+        ["bullets", "paragraph", "headline"],
+        format_func=lambda x: "Punti" if x == "bullets" else ("Paragrafo" if x == "paragraph" else "Titolo")
+    )
+
     # Initialize session state variables
     if 'full_transcript' not in st.session_state:
         st.session_state['full_transcript'] = ''
@@ -143,15 +161,20 @@ if audio_source:
         if not api_keys["openai"] or not api_keys["assemblyai"]:
             st.error("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
         else:
-            full_transcript = perform_transcription(
+            full_transcript, summary = perform_transcription(
                 audio_source,
                 transcription_option,
                 api_keys,
-                selected_language
+                selected_language,
+                assemblyai_transcription_model,
+                assemblyai_summarization_model,
+                assemblyai_summary_type
             )
 
             if full_transcript:
                 st.session_state['full_transcript'] = full_transcript
+                if summary:
+                    st.session_state['summary'] = summary
 
     if st.session_state['full_transcript']:
         st.subheader("Trascrizione completa")
