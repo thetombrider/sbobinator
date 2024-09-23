@@ -215,14 +215,35 @@ if audio_source:
 
                     # Summarize the transcript
                     with st.spinner("Sto generando il riassunto..."):
-                        summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
+                        try:
+                            # Check if the API key has access to LeMUR
+                            lemur_summary = None
+                            response = requests.get(
+                                "https://api.assemblyai.com/v2/account",
+                                headers={"authorization": api_keys["assemblyai"]}
+                            )
+                            if response.status_code == 200 and response.json().get("lemur_enabled", False):
+                                # Use LeMUR for summarization
+                                summary = transcriber.lemur.summarize(
+                                    transcript.id,
+                                    context="",
+                                    answer_format="**<topic header>**\n<topic summary>"
+                                )
+                                lemur_summary = summary.response
+                            else:
+                                # Fallback to OpenAI summarization
+                                lemur_summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
+                        except Exception as e:
+                            st.error(f"Errore durante la generazione del riassunto con LeMUR: {str(e)}")
+                            st.error("Utilizzo il fallback con OpenAI per generare il riassunto.")
+                            lemur_summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
                     
                     st.subheader("Riassunto:")
-                    st.write(summary)
+                    st.write(lemur_summary)
 
                     st.download_button(
                         label="Scarica riassunto",
-                        data=summary,
+                        data=lemur_summary,
                         file_name="riassunto.txt",
                         mime="text/plain"
                     )
