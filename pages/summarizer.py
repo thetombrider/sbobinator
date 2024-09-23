@@ -73,6 +73,15 @@ if uploaded_file is not None:
                     # Store the summary in session state
                     st.session_state['summary'] = final_summary
 
+                    # Add download button for summary
+                    summary_filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_riassunto.txt"
+                    st.download_button(
+                        label="Scarica riassunto come TXT",
+                        data=final_summary,
+                        file_name=summary_filename,
+                        mime="text/plain"
+                    )
+
                     # Email sending section
                     st.subheader("Invia riassunto via email")
                     email = st.text_input("Inserisci il tuo indirizzo email")
