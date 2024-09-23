@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import os
 import textwrap
+from functions import send_email  # Import the send_email function
 
 st.set_page_config(
     page_title="Summarizer",
@@ -68,5 +69,34 @@ if uploaded_file is not None:
                     
                     st.subheader("Riassunto:")
                     st.write(final_summary)
+
+                    # Store the summary in session state
+                    st.session_state['summary'] = final_summary
+
+                    # Email sending section
+                    st.subheader("Invia riassunto via email")
+                    email = st.text_input("Inserisci il tuo indirizzo email")
+
+                    if st.button("Invia Email"):
+                        if not email:
+                            st.error("Per favore, inserisci un indirizzo email valido.")
+                        else:
+                            email_body = f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
+
+                            with st.spinner("Invio email in corso..."):
+                                status_code, response = send_email(
+                                    email,
+                                    "Riassunto del Testo",
+                                    email_body
+                                )
+                                if status_code == 200:
+                                    st.success("Email inviata con successo!")
+                                else:
+                                    st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
+
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {str(e)}")
+
+# Add footer
+st.markdown("---")
+st.markdown("Creato da Tommy usando Streamlit, OpenAI e Resend")
