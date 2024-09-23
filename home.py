@@ -101,6 +101,7 @@ elif input_option == "URL (YouTube o Google Drive)":
                 st.write(f"MIME type: {mime_type}")
         except Exception as e:
             st.error(f"Si è verificato un errore durante il download o l'elaborazione dell'audio: {str(e)}")
+            st.info("Se il problema persiste con i video di YouTube, prova ad accedere a YouTube nel tuo browser Chrome e riprovare.")
             st.error("Per favore, controlla l'URL e riprova. Se il problema persiste, potrebbe essere un problema temporaneo con il servizio di hosting del file.")
 
 if audio_source:

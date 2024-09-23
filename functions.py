@@ -65,13 +65,24 @@ def download_youtube_audio(youtube_url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
-            'outtmpl': '%(title)s.%(ext)s'
+            'outtmpl': '%(title)s.%(ext)s',
+            # Aggiungi queste opzioni per gestire le restrizioni di YouTube
+            'cookiesfrombrowser': ('chrome',),  # Usa i cookie del browser Chrome
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'logtostderr': False,
+            'quiet': True,
+            'no_warnings': True,
+            'default_search': 'auto',
+            'source_address': '0.0.0.0'
         }
         
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(youtube_url, download=False)
+                file_name = ydl.prepare_filename(info)
                 ydl.download([youtube_url])
                 
             # Find the downloaded file
