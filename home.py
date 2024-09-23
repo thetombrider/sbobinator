@@ -257,8 +257,6 @@ if audio_source:
 st.markdown("---")
 st.markdown("Creato da Tommy usando Streamlit, OpenAI e AssemblyAI")
 
-# Add this in the sidebar content function
-st.sidebar.markdown("[Summarizer](summarizer)")
 
 
 
