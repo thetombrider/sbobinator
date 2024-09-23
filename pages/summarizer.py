@@ -13,13 +13,16 @@ st.set_page_config(
 from pages.config import load_api_keys, is_valid_openai_api_key
 
 api_keys = load_api_keys()
-if not is_valid_openai_api_key(api_keys["openai"]):
-    st.error("Inserisci una API Key valida di OpenAI nella pagina di configurazione.")
-    st.stop()
+api_key_valid = is_valid_openai_api_key(api_keys["openai"])
 
-client = OpenAI(api_key=api_keys["openai"])
+client = None
+if api_key_valid:
+    client = OpenAI(api_key=api_keys["openai"])
 
 st.title("Summarizer")
+
+if not api_key_valid:
+    st.warning("Inserisci una API Key valida di OpenAI nella pagina di configurazione.")
 
 uploaded_file = st.file_uploader("Carica un file di testo", type=["txt"])
 
@@ -27,7 +30,7 @@ if uploaded_file is not None:
     file_content = uploaded_file.read().decode("utf-8")
     st.text_area("Contenuto del file", file_content, height=300)
 
-if uploaded_file is not None:
+if uploaded_file is not None and api_key_valid:
     if st.button("Genera Riassunto"):
         with st.spinner("Sto generando il riassunto..."):
             try:
