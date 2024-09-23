@@ -8,6 +8,14 @@ import requests
 from openai import OpenAI
 import assemblyai as aai
 
+languages = {
+    "Italiano": "it",
+    "English": "en",
+    "Français": "fr",
+    "Deutsch": "de",
+    "Español": "es"
+}
+
 # Function to validate YouTube URL
 def is_valid_youtube_url(url):
     youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
@@ -197,7 +205,7 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
         st.write(full_transcript)
 
         if st.button("Genera Riassunto"):
-            summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
+            summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
             st.subheader("Riassunto")
             st.write(summary)
 

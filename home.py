@@ -18,7 +18,8 @@ from functions import (
     send_email,
     transcribe_with_openai,
     transcribe_with_assemblyai,
-    perform_transcription
+    perform_transcription,
+    languages
 )
 
 # Add this at the very beginning of your file
