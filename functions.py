@@ -181,8 +181,8 @@ def send_email(resend_api_key, to_email, subject, body):
         "Content-Type": "application/json"
     }
     data = {
-        "from": "Sbobinator <noreply@sbobinator.com>",
-        "to": to_email,
+        "from": "Sbobinator <info@sbobinator.com>",  # Ensure this domain is verified
+        "to": [to_email],  # 'to' should be a list according to Resend docs
         "subject": subject,
         "html": body
     }
@@ -194,7 +194,10 @@ def send_email(resend_api_key, to_email, subject, body):
         return response.status_code, response.json()
     except requests.exceptions.RequestException as e:
         st.error(f"Error sending email: {str(e)}")
-        return None, str(e)
+        if e.response is not None:
+            return e.response.status_code, e.response.json()
+        else:
+            return None, str(e)
 
 def perform_transcription(audio_source, transcription_option, api_keys, selected_language):
     full_transcript = ""
@@ -211,6 +214,11 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
 
         st.subheader("Trascrizione completa")
         st.write(full_transcript)
+
+        if st.button("Genera Riassunto"):
+            summary = summarize_transcript(api_keys["openai"], full_transcript, selected_language)
+            st.subheader("Riassunto")
+            st.write(summary)
 
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
