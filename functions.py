@@ -181,7 +181,7 @@ def send_email(resend_api_key, to_email, subject, body):
         "Content-Type": "application/json"
     }
     data = {
-        "from": "Sbobinator <info@sbobinator.com>",  # Ensure this domain is verified
+        "from": "Sbobinator <info@minutohomeserver.xyz>",  # Ensure this domain is verified
         "to": [to_email],  # 'to' should be a list according to Resend docs
         "subject": subject,
         "html": body
