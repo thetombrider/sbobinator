@@ -222,4 +222,4 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
     
-    return full_transcript, summary
+    return full_transcript
