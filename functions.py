@@ -66,15 +66,18 @@ def download_youtube_audio(youtube_url):
                 'preferredquality': '192',
             }],
             'outtmpl': '%(title)s.%(ext)s',
-            # Aggiungi queste opzioni per gestire le restrizioni di YouTube
-            'cookiesfrombrowser': ('chrome',),  # Usa i cookie del browser Chrome
+            # Rimuovi l'opzione cookiesfrombrowser
             'nocheckcertificate': True,
             'ignoreerrors': False,
             'logtostderr': False,
             'quiet': True,
             'no_warnings': True,
             'default_search': 'auto',
-            'source_address': '0.0.0.0'
+            'source_address': '0.0.0.0',
+            # Aggiungi queste opzioni per aggirare alcune restrizioni
+            'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
+            'geo_bypass': True,
+            'geo_bypass_country': 'IT'
         }
         
         with tempfile.TemporaryDirectory() as temp_dir:
