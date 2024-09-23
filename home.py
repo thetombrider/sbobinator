@@ -262,7 +262,7 @@ if audio_source:
             st.error("Per favore, inserisci un indirizzo email valido.")
         else:
             email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p><h2>Riassunto</h2><p>{lemur_summary}</p>"
-            status_code, response = send_email(api_keys["resend"], email, f"Trascrizione e Riassunto - {file_name}", email_body)
+            status_code, response = send_email(api_keys["resend_api_key"], email, f"Trascrizione e Riassunto - {file_name}", email_body)
             if status_code == 200:
                 st.success("Email inviata con successo!")
             else:
