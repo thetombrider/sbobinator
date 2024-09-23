@@ -102,7 +102,6 @@ elif input_option == "URL (YouTube o Google Drive)":
         except Exception as e:
             st.error(f"Si è verificato un errore durante il download o l'elaborazione dell'audio: {str(e)}")
             st.info("Se il problema persiste con i video di YouTube, prova a utilizzare un URL diverso o a caricare direttamente un file audio.")
-            st.error("Per favore, controlla l'URL e riprova. Se il problema persiste, potrebbe essere un problema temporaneo con il servizio di hosting del file.")
 
 if audio_source:
     # Transcription options
