@@ -2,7 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import os
 import textwrap
-from functions import send_email  # Import the send_email function
+from functions import send_email, add_sidebar_content  # Import the send_email and add_sidebar_content functions
 
 st.set_page_config(
     page_title="Summarizer",
@@ -24,6 +24,16 @@ if openai_key_valid:
 
 st.title("Summarizer")
 
+# Add sidebar content
+add_sidebar_content()
+
+# Add OpenAI model selection to sidebar
+openai_model = st.sidebar.selectbox(
+    "Modello OpenAI",
+    ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
+    format_func=lambda x: x.upper()
+)
+
 if not openai_key_valid:
     st.warning("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
 
@@ -32,10 +42,10 @@ uploaded_file = st.file_uploader("Carica un file di testo", type=["txt"])
 def chunk_text(text, chunk_size=6000):
     return textwrap.wrap(text, chunk_size, break_long_words=False)
 
-def summarize_chunk(client, chunk):
+def summarize_chunk(client, chunk, model):
     prompt = f"Riassumi il seguente testo:\n\n{chunk}\n\nRiassunto:"
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a skilled assistant specializing in summarizing text. Your summaries are clear, concise, and capture the essence of the content."},
             {"role": "user", "content": prompt}
@@ -64,14 +74,14 @@ if uploaded_file is not None:
                     chunk_summaries = []
                     
                     for chunk in chunks:
-                        chunk_summary = summarize_chunk(client, chunk)
+                        chunk_summary = summarize_chunk(client, chunk, openai_model)
                         chunk_summaries.append(chunk_summary)
                     
                     # Combine chunk summaries
                     combined_summary = " ".join(chunk_summaries)
                     
                     # Generate final summary
-                    final_summary = summarize_chunk(client, combined_summary)
+                    final_summary = summarize_chunk(client, combined_summary, openai_model)
                     
                     st.session_state['summary'] = final_summary
 
