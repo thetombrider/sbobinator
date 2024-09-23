@@ -132,6 +132,13 @@ if audio_source:
     }
     selected_language = st.selectbox("Seleziona la lingua dell'audio", list(languages.keys()))
 
+    # Initialize session state variables
+    if 'full_transcript' not in st.session_state:
+        st.session_state['full_transcript'] = ''
+
+    if 'summary' not in st.session_state:
+        st.session_state['summary'] = ''
+
     if st.button("Trascrivi"):
         if not api_keys["openai"] or not api_keys["assemblyai"]:
             st.error("Le API keys non sono valide o mancanti. Per favore, inseriscile nella pagina di configurazione.")
@@ -144,40 +151,49 @@ if audio_source:
             )
 
             if full_transcript:
-                st.subheader("Trascrizione completa")
-                st.write(full_transcript)
+                st.session_state['full_transcript'] = full_transcript
 
-                # Option to generate summary
-                if st.button("Genera Riassunto"):
-                    summary = summarize_transcript(
-                        api_keys["openai"],
-                        full_transcript,
-                        selected_language
+    if st.session_state['full_transcript']:
+        st.subheader("Trascrizione completa")
+        st.write(st.session_state['full_transcript'])
+
+        # Option to generate summary
+        if st.button("Genera Riassunto"):
+            summary = summarize_transcript(
+                api_keys["openai"],
+                st.session_state['full_transcript'],
+                selected_language
+            )
+            if summary:
+                st.session_state['summary'] = summary
+
+        # Display the summary if it exists
+        if st.session_state['summary']:
+            st.subheader("Riassunto")
+            st.write(st.session_state['summary'])
+
+        # Email sending section
+        st.subheader("Invia trascrizione via email")
+        email = st.text_input("Inserisci il tuo indirizzo email")
+
+        if st.button("Invia Email"):
+            if not email:
+                st.error("Per favore, inserisci un indirizzo email valido.")
+            else:
+                email_body = f"<h2>Trascrizione</h2><p>{st.session_state['full_transcript']}</p>"
+                if st.session_state['summary']:
+                    email_body += f"<h2>Riassunto</h2><p>{st.session_state['summary']}</p>"
+
+                with st.spinner("Invio email in corso..."):
+                    status_code, response = send_email(
+                        email,
+                        "Trascrizione Audio",
+                        email_body
                     )
-                    st.subheader("Riassunto")
-                    st.write(summary)
-
-                # Email sending section
-                st.subheader("Invia trascrizione via email")
-                email = st.text_input("Inserisci il tuo indirizzo email")
-                if st.button("Invia Email"):
-                    if not email:
-                        st.error("Per favore, inserisci un indirizzo email valido.")
+                    if status_code == 200:
+                        st.success("Email inviata con successo!")
                     else:
-                        email_body = f"<h2>Trascrizione</h2><p>{full_transcript}</p>"
-                        if 'summary' in locals():
-                            email_body += f"<h2>Riassunto</h2><p>{summary}</p>"
-
-                        with st.spinner("Invio email in corso..."):
-                            status_code, response = send_email(
-                                email,
-                                "Trascrizione Audio",
-                                email_body
-                            )
-                            if status_code == 200:
-                                st.success("Email inviata con successo!")
-                            else:
-                                st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
+                        st.error(f"Errore nell'invio dell'email. Codice di stato: {status_code}, Dettagli: {response}")
 
 # Add footer
 st.markdown("---")
