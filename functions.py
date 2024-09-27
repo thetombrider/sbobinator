@@ -219,7 +219,7 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 config = aai.TranscriptionConfig(
                     speaker_labels=True,
                     language_code=languages[selected_language],
-                    model=assemblyai_transcription_model,
+                    transcription_model=assemblyai_transcription_model,  # Parametro corretto
                     summarization=True,
                     summary_model=assemblyai_summarization_model,
                     summary_type=assemblyai_summary_type
