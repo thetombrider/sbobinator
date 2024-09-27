@@ -216,10 +216,15 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 # Generate summary using OpenAI
                 summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
             else:
+                # Set the AssemblyAI API key
+                aai.settings.api_key = api_keys["assemblyai"]
+                
                 config = aai.TranscriptionConfig(
                     speaker_labels=True,
-                    language_code=languages[selected_language], # Parametro corretto
-                    summarization=True
+                    language_code=languages[selected_language],
+                    summarization=True,
+                    summary_model=assemblyai_summarization_model,
+                    summary_type=assemblyai_summary_type
                 )
                 transcript = aai.Transcriber().transcribe(audio_source["data"], config=config)
                 full_transcript = "\n".join([
