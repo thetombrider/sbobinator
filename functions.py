@@ -7,6 +7,9 @@ import gdown
 import requests
 from openai import OpenAI
 import assemblyai as aai
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 languages = {
     "Italiano": "it",
@@ -228,6 +231,7 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 ])
                 summary = transcript.summary
     except Exception as e:
+        logging.error("Error during transcription", exc_info=True)
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
     
     return full_transcript, summary
