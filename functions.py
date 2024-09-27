@@ -203,12 +203,15 @@ def send_email(to_email, subject, body):
 
 def perform_transcription(audio_source, transcription_option, api_keys, selected_language, assemblyai_transcription_model, assemblyai_summarization_model, assemblyai_summary_type):
     full_transcript = ""
+    summary = ""
     
     try:
         with st.spinner("Sto trascrivendo..."):
             if transcription_option == "Senza diarizzazione (OpenAI)":
                 transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
                 full_transcript = transcript.text
+                # Generate summary using OpenAI
+                summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
             else:
                 config = aai.TranscriptionConfig(
                     speaker_labels=True,
@@ -227,4 +230,4 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
     except Exception as e:
         st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
     
-    return full_transcript
+    return full_transcript, summary
