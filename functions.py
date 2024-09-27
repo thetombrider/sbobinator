@@ -221,16 +221,11 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
                 
                 config = aai.TranscriptionConfig(
                     speaker_labels=True,
-                    language_code=languages[selected_language]
+                    language_code=languages[selected_language],
+                    summarization=True,
+                    summary_model=assemblyai_summarization_model,
+                    summary_type=assemblyai_summary_type
                 )
-                
-                # Only add summarization if it's available for the selected language
-                try:
-                    config.summarization = True
-                    config.summary_model = assemblyai_summarization_model
-                    config.summary_type = assemblyai_summary_type
-                except ValueError:
-                    st.warning(f"Summarization is not available for {selected_language}. Proceeding without summarization.")
                 
                 transcript = aai.Transcriber().transcribe(audio_source["data"], config=config)
                 full_transcript = "\n".join([
