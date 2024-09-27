@@ -5,19 +5,8 @@ import os
 import yt_dlp
 import gdown
 import requests
+import mimetypes
 from openai import OpenAI
-import assemblyai as aai
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
-languages = {
-    "Italiano": "it",
-    "English": "en",
-    "Français": "fr",
-    "Deutsch": "de",
-    "Español": "es"
-}
 
 # Function to validate YouTube URL
 def is_valid_youtube_url(url):
@@ -76,27 +65,13 @@ def download_youtube_audio(youtube_url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
-            'outtmpl': '%(title)s.%(ext)s',
-            # Rimuovi l'opzione cookiesfrombrowser
-            'nocheckcertificate': True,
-            'ignoreerrors': False,
-            'logtostderr': False,
-            'quiet': True,
-            'no_warnings': True,
-            'default_search': 'auto',
-            'source_address': '0.0.0.0',
-            # Aggiungi queste opzioni per aggirare alcune restrizioni
-            'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
-            'geo_bypass': True,
-            'geo_bypass_country': 'IT'
+            'outtmpl': '%(title)s.%(ext)s'
         }
         
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts['outtmpl'] = os.path.join(temp_dir, '%(title)s.%(ext)s')
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(youtube_url, download=False)
-                file_name = ydl.prepare_filename(info)
                 ydl.download([youtube_url])
                 
             # Find the downloaded file
@@ -149,92 +124,19 @@ def add_sidebar_content():
     st.sidebar.markdown("[OpenAI Dashboard](https://platform.openai.com/)")
     st.sidebar.markdown("[AssemblyAI Dashboard](https://www.assemblyai.com/dashboard)")
 
-def transcribe_with_openai(audio_data, api_key):
-    client = OpenAI(api_key=api_key)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-        temp_audio.write(audio_data)
-        temp_audio.flush()
-        
-        with open(temp_audio.name, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-    
-    os.unlink(temp_audio.name)
-    return transcript
 
-def transcribe_with_assemblyai(audio_data, api_key, language):
-    aai.settings.api_key = api_key
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-        temp_audio.write(audio_data)
-        temp_audio.flush()
-        
-        config = aai.TranscriptionConfig(speaker_labels=True, language_code=language, summary_model="claude-3.5-sonnet-20240620")
-        transcript = aai.Transcriber().transcribe(temp_audio.name, config=config)
-    
-    os.unlink(temp_audio.name)
-    return transcript
 
-def send_email(to_email, subject, body):
-    if "resend_api_key" not in st.secrets or not st.secrets["resend_api_key"]:
-        st.error("La Resend API Key non è configurata nei secrets.")
-        return None, "Resend API Key mancante."
-    resend_api_key = st.secrets["resend_api_key"]
 
-    url = "https://api.resend.com/emails"
+def send_email(resend_api_key, to_email, subject, body):
+    url = "https://api.resend.com/v1/emails"
     headers = {
         "Authorization": f"Bearer {resend_api_key}",
         "Content-Type": "application/json"
     }
     data = {
-        "from": "sbobinator@minutohomeserver.xyz",  # Assicurati di utilizzare un indirizzo 'from' verificato
-        "to": [to_email],
+        "to": to_email,
         "subject": subject,
         "html": body
     }
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        return response.status_code, response.json()
-    except requests.exceptions.RequestException as e:
-        error_status = e.response.status_code if e.response else None
-        error_response = e.response.text if e.response else str(e)
-        st.error(f"Errore nell'invio dell'email: {error_response}")
-        return error_status, error_response
-
-def perform_transcription(audio_source, transcription_option, api_keys, selected_language, assemblyai_transcription_model, assemblyai_summarization_model, assemblyai_summary_type):
-    full_transcript = ""
-    summary = ""
-    
-    try:
-        with st.spinner("Sto trascrivendo..."):
-            if transcription_option == "Senza diarizzazione (OpenAI)":
-                transcript = transcribe_with_openai(audio_source["data"], api_keys["openai"])
-                full_transcript = transcript.text
-                # Generate summary using OpenAI
-                summary = summarize_transcript(api_keys["openai"], full_transcript, languages[selected_language])
-            else:
-                # Set the AssemblyAI API key
-                aai.settings.api_key = api_keys["assemblyai"]
-                
-                config = aai.TranscriptionConfig(
-                    speaker_labels=True,
-                    language_code=languages[selected_language],
-                    summarization=True,
-                    summary_model="informative",
-                    summary_type="bullets"
-                )
-                
-                transcript = aai.Transcriber().transcribe(audio_source["data"], config=config)
-                full_transcript = "\n".join([
-                    f"Speaker {utterance.speaker}: {utterance.text}"
-                    for utterance in transcript.utterances
-                ])
-                summary = getattr(transcript, 'summary', '')
-    except Exception as e:
-        logging.error("Error during transcription", exc_info=True)
-        st.error(f"Si è verificato un errore durante la trascrizione: {str(e)}")
-    
-    return full_transcript, summary
+    response = requests.post(url, headers=headers, json=data)
+    return response.status_code, response.json()
