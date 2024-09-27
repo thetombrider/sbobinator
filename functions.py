@@ -218,11 +218,8 @@ def perform_transcription(audio_source, transcription_option, api_keys, selected
             else:
                 config = aai.TranscriptionConfig(
                     speaker_labels=True,
-                    language_code=languages[selected_language],
-                    transcription_model=assemblyai_transcription_model,  # Parametro corretto
-                    summarization=True,
-                    summary_model=assemblyai_summarization_model,
-                    summary_type=assemblyai_summary_type
+                    language_code=languages[selected_language], # Parametro corretto
+                    summarization=True
                 )
                 transcript = aai.Transcriber().transcribe(audio_source["data"], config=config)
                 full_transcript = "\n".join([
